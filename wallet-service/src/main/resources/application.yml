@@ -9,12 +9,16 @@ rabbitmq:
     gift-code:
       redeem: gift-code.redeem.queue
     fund-transfer: fund-transfer.queue
+    init:
+      fund-transfer: init.fund-transfer.queue
     wallet: wallet.update.queue
   routing-key:
     user-created: user.created
     gift-code:
       redeem: gift-code.redeem.routing-key
     fund-transfer: fund-transfer.routing-key
+    init:
+      fund-transfer: init.fund-transfer.routing-key
     wallet: wallet.update.routing-key
 
 spring:

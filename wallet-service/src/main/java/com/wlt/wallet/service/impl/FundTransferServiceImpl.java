@@ -1,18 +1,16 @@
 package com.wlt.wallet.service.impl;
 
 import com.wlt.wallet.constants.CommonConstants;
-import com.wlt.wallet.dto.FundTransferEvent;
-import com.wlt.wallet.dto.InitFundTransferRequestDto;
-import com.wlt.wallet.dto.FundTransferResponseDto;
+import com.wlt.wallet.dto.*;
 import com.wlt.wallet.entity.WalletAccount;
 import com.wlt.wallet.repository.WalletAccountRepository;
+import com.wlt.wallet.service.AccountService;
 import com.wlt.wallet.service.FundTransferService;
-import com.wlt.wallet.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -26,18 +24,14 @@ public class FundTransferServiceImpl implements FundTransferService {
     @Value("${rabbitmq.exchange.fund-transfer}")
     private String fundTransferExchange;
 
-    @Value("${rabbitmq.routing-key.fund-transfer}")
-    private String fundTransferRoutingKey;
+    @Value("${rabbitmq.routing-key.init.fund-transfer}")
+    private String initFundTransferRoutingKey;
 
-    @Value("${rabbitmq.queue.fund-transfer}")
-    private String fundTransferQueue;
-
-    private final RabbitTemplate rabbitTemplate;
     private final WalletAccountRepository accountRepository;
-    private final RedisService redisService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Override
-    public FundTransferResponseDto fundTransfer(Long userId, InitFundTransferRequestDto fundTransferRequestDto) {
+    public FundTransferResponseDto initFundTransfer(Long userId, InitFundTransferRequestDto fundTransferRequestDto) {
         Optional<WalletAccount> sourceWalletAccount = accountRepository.findByIdAndStatus(fundTransferRequestDto.getDrWalletId(), CommonConstants.ACTIVE);
         if (sourceWalletAccount.isPresent()) {
             BigDecimal sourceBalance = sourceWalletAccount.get().getBalance();
@@ -55,11 +49,16 @@ public class FundTransferServiceImpl implements FundTransferService {
 
         String paymentRefNo = UUID.randomUUID().toString();
         CompletableFuture.runAsync(() -> {
-            FundTransferEvent fundTransferResponseDto = new FundTransferEvent();
-            BeanUtils.copyProperties(fundTransferRequestDto, fundTransferResponseDto);
-            fundTransferResponseDto.setPaymentRefNo(paymentRefNo);
-            fundTransferResponseDto.setUserId(userId);
-            rabbitTemplate.convertAndSend(fundTransferExchange, fundTransferRoutingKey, fundTransferResponseDto);
+            FundTransferEvent fundTransferEvent = new FundTransferEvent();
+            fundTransferEvent.setAmount(fundTransferRequestDto.getAmount());
+            fundTransferEvent.setCcy(fundTransferRequestDto.getCcy());
+            fundTransferEvent.setDrCcy(fundTransferRequestDto.getDrCcy());
+            fundTransferEvent.setCrCcy(fundTransferRequestDto.getCrCcy());
+            fundTransferEvent.setDrWalletId(fundTransferRequestDto.getDrWalletId());
+            fundTransferEvent.setCrWalletId(fundTransferRequestDto.getCrWalletId());
+            fundTransferEvent.setUserId(userId);
+            fundTransferEvent.setPaymentRefNo(paymentRefNo);
+            rabbitTemplate.convertAndSend(fundTransferExchange, initFundTransferRoutingKey, fundTransferEvent);
         });
 
         FundTransferResponseDto response = new FundTransferResponseDto();

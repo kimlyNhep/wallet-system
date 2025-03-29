@@ -4,5 +4,5 @@ import com.wlt.wallet.dto.InitFundTransferRequestDto;
 import com.wlt.wallet.dto.FundTransferResponseDto;
 
 public interface FundTransferService {
-    FundTransferResponseDto fundTransfer(Long userId, InitFundTransferRequestDto fundTransferRequestDto);
+    FundTransferResponseDto initFundTransfer(Long userId, InitFundTransferRequestDto fundTransferRequestDto);
 }

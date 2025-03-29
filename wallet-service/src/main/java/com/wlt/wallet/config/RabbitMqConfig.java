@@ -36,6 +36,12 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.queue.fund-transfer}")
     private String fundTransferQueue;
 
+    @Value("${rabbitmq.queue.init.fund-transfer}")
+    private String initFundTransferQueue;
+
+    @Value("${rabbitmq.routing-key.init.fund-transfer}")
+    private String initFundTransferRoutingKey;
+
     @Value("${rabbitmq.exchange.wallet}")
     private String walletExchange;
 
@@ -86,6 +92,11 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue initFundTransferQueue() {
+        return QueueBuilder.durable(initFundTransferQueue).build();
+    }
+
+    @Bean
     public Binding walletCreationBinding(Queue walletCreationQueue, Exchange userExchange) {
         return BindingBuilder
                 .bind(walletCreationQueue)
@@ -118,6 +129,15 @@ public class RabbitMqConfig {
                 .bind(walletUpdateQueue)
                 .to(walletUpdateExchange)
                 .with(walletUpdateRoutingKey)
+                .noargs();
+    }
+
+    @Bean
+    public Binding initFundTransferBinding(Queue initFundTransferQueue, Exchange fundTransferExchange) {
+        return BindingBuilder
+                .bind(initFundTransferQueue)
+                .to(fundTransferExchange)
+                .with(initFundTransferRoutingKey)
                 .noargs();
     }
 

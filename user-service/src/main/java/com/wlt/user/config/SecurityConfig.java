@@ -2,6 +2,7 @@ package com.wlt.user.config;
 
 import com.wlt.user.filter.JwtAuthenticationFilter;
 import com.wlt.user.filter.JwtAuthorizationFilter;
+import com.wlt.user.repository.UserRepository;
 import com.wlt.user.service.impl.CustomUserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -29,18 +30,18 @@ import java.util.List;
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
 
     @Bean
     public SecurityFilterChain configure(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
 
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager);
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(userRepository, authenticationManager);
         jwtAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
 
         http.csrf(AbstractHttpConfigurer::disable);
         http.authorizeHttpRequests(it -> it
                 .requestMatchers("/api/v1/user/register").permitAll()
                 .anyRequest().authenticated());
-//                .formLogin(Customizer.withDefaults());
         http.addFilter(jwtAuthenticationFilter);
         http.addFilterBefore(new JwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();

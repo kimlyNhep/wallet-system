@@ -33,21 +33,7 @@ import java.util.concurrent.CompletableFuture;
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
-
-    private final TransactionRepository transactionRepository;
-
-    @Value("${wallet.service.base-url}")
-    private String walletServiceUrl;
-
-    @Value("${rabbitmq.exchange.fund-transfer}")
-    private String fundTransferExchange;
-
-    @Value("${rabbitmq.routing-key.fund-transfer}")
-    private String fundTransferRoutingKey;
-
     private final GiftCodeRepository giftCodeRepository;
-    private final RestTemplate restTemplate;
-    private final RabbitTemplate rabbitTemplate;
 
     private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 12;
@@ -132,79 +118,6 @@ public class PaymentServiceImpl implements PaymentService {
         } else {
             throw new RuntimeException("ExchangeRate not found");
         }
-    }
-
-    @Override
-    public FundTransferResponseDto fundTransfer(Long userId, FundTransferRequestDto fundTransferRequestDto) {
-        MultiValueMap<String, String> headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-        headers.add("Collation-id", UUID.randomUUID().toString());
-
-           ResponseEntity<SuccessResponse<WalletAccountResponseDto>> drWalletResponseEntity = restTemplate.exchange(
-                   walletServiceUrl + "/api/v1/account/" + fundTransferRequestDto.getDrWalletId(),
-                   HttpMethod.GET,
-                   new HttpEntity<>(null, headers),
-                   new ParameterizedTypeReference<>() {
-                   }
-           );
-
-           if (drWalletResponseEntity.getStatusCode().is2xxSuccessful()) {
-               SuccessResponse<WalletAccountResponseDto> drWalletResponse = drWalletResponseEntity.getBody();
-               if (drWalletResponse != null && drWalletResponse.getData() != null) {
-                   BigDecimal debitAmount = drWalletResponse.getData().getBalance();
-                   if (debitAmount.compareTo(fundTransferRequestDto.getAmount()) < 0) {
-                       throw new RuntimeException("Insufficient amount");
-                   }
-               } else {
-                   throw new RuntimeException("debit wallet not found");
-               }
-           }
-
-        ResponseEntity<SuccessResponse<WalletAccountResponseDto>> crWalletResponseEntity = restTemplate.exchange(
-                walletServiceUrl + "/api/v1/account/" + fundTransferRequestDto.getCrWalletId(),
-                HttpMethod.GET,
-                new HttpEntity<>(null, headers),
-                new ParameterizedTypeReference<>() {
-                }
-        );
-
-        if (crWalletResponseEntity.getStatusCode().is2xxSuccessful()) {
-            SuccessResponse<WalletAccountResponseDto> crWalletResponse = crWalletResponseEntity.getBody();
-        } else {
-            throw new RuntimeException("credit wallet not found");
-        }
-        Transaction transaction = getInitTransaction(fundTransferRequestDto);
-        transactionRepository.save(transaction);
-
-        CompletableFuture.runAsync(() -> {
-            FundTransferEvent fundTransferEvent = new FundTransferEvent();
-            fundTransferEvent.setAmount(transaction.getAmount());
-            fundTransferEvent.setCcy(transaction.getCcy());
-            fundTransferEvent.setDrCcy(transaction.getDrCcy());
-            fundTransferEvent.setCrCcy(transaction.getCrCcy());
-            fundTransferEvent.setDrWalletId(transaction.getDrWalletId());
-            fundTransferEvent.setCrWalletId(transaction.getCrWalletId());
-            fundTransferEvent.setUserId(userId);
-           rabbitTemplate.convertAndSend(fundTransferExchange, fundTransferRoutingKey, fundTransferEvent);
-        });
-
-        FundTransferResponseDto responseDto = new FundTransferResponseDto();
-        responseDto.setCcy(fundTransferRequestDto.getCcy());
-        responseDto.setAmount(fundTransferRequestDto.getAmount());
-        return responseDto;
-    }
-
-    private static Transaction getInitTransaction(FundTransferRequestDto fundTransferRequestDto) {
-        Transaction transaction = new Transaction();
-        transaction.setAmount(fundTransferRequestDto.getAmount());
-        transaction.setCrCcy(fundTransferRequestDto.getCrCcy());
-        transaction.setDrCcy(fundTransferRequestDto.getDrCcy());
-        transaction.setCcy(fundTransferRequestDto.getCcy());
-        transaction.setCrWalletId(fundTransferRequestDto.getCrWalletId());
-        transaction.setDrWalletId(fundTransferRequestDto.getDrWalletId());
-        transaction.setExchangeRate(BigDecimal.ZERO);
-        transaction.setStatus(Status.INIT);
-        return transaction;
     }
 
     private String generateUniqueCode() {

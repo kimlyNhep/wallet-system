@@ -8,12 +8,8 @@ import java.math.BigDecimal;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class FundTransferRequestDto {
-    private String paymentRefNo;
-    private Long crWalletId;
-    private String crCcy;
-    private String drCcy;
-    private Long drWalletId;
+public class CreditAccountBalanceRequestDto {
+    private Long creditWalletId;
+    private BigDecimal creditBalance;
     private String ccy;
-    private BigDecimal amount;
 }

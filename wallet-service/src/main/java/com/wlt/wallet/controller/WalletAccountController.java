@@ -44,4 +44,26 @@ public class WalletAccountController {
         successResponse.setMessage("success");
         return ResponseEntity.ok(successResponse);
     }
+
+    @PostMapping("/api/v1/account/credit")
+    public ResponseEntity<SuccessResponse<AccountBalanceResponseDto>> creditWalletAccount(
+            @RequestHeader(name = "user-id") Long userId,
+            @RequestBody CreditAccountBalanceRequestDto creditAccountBalanceRequestDto
+    ) {
+        SuccessResponse<AccountBalanceResponseDto> successResponse = new SuccessResponse<>();
+        successResponse.setData(accountService.creditAccountBalance(userId, creditAccountBalanceRequestDto));
+        successResponse.setMessage("success");
+        return ResponseEntity.ok(successResponse);
+    }
+
+    @PostMapping("/api/v1/account/debit")
+    public ResponseEntity<SuccessResponse<AccountBalanceResponseDto>> debitWalletAccount(
+            @RequestHeader(name = "user-id") Long userId,
+            @RequestBody DebitAccountBalanceRequestDto debitAccountBalanceRequestDto
+    ) {
+        SuccessResponse<AccountBalanceResponseDto> successResponse = new SuccessResponse<>();
+        successResponse.setData(accountService.debitAccountBalance(userId, debitAccountBalanceRequestDto));
+        successResponse.setMessage("success");
+        return ResponseEntity.ok(successResponse);
+    }
 }

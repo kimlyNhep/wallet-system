@@ -9,6 +9,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -40,10 +41,17 @@ public class JwtAuthorizationFilter implements WebFilter {
                 Arrays.stream(roles).forEach(role -> {
                     authorities.add(new SimpleGrantedAuthority(role));
                 });
+                Long userId = decodedJWT.getClaim("userId").asLong();
 
+                ServerHttpRequest request = exchange.getRequest().mutate()
+                        .header("user-id", String.valueOf(userId))
+                        .header("roles", String.join(",", roles))
+                        .build();
+
+                ServerWebExchange newExchange = exchange.mutate().request(request).build();
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
 
-                return chain.filter(exchange)
+                return chain.filter(newExchange)
                         .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authenticationToken));
 
             } catch (Exception e) {

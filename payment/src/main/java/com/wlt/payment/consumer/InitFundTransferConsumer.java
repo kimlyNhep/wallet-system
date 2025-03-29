@@ -12,17 +12,18 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class FundTransferConsumer {
+public class InitFundTransferConsumer {
+
     private final FundTransferService fundTransferService;
 
-    @RabbitListener(queues = "${rabbitmq.queue.fund-transfer}")
+    @RabbitListener(queues = "${rabbitmq.queue.init.fund-transfer}")
     public void handleUserCreatedEvent(FundTransferEvent event) {
         try {
             FundTransferRequestDto requestDto = new FundTransferRequestDto();
             BeanUtils.copyProperties(event, requestDto);
-            fundTransferService.fundTransfer(event.getUserId(), requestDto);
+            fundTransferService.initFundTransfer(event.getUserId(), requestDto);
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage());
         }
     }
 }

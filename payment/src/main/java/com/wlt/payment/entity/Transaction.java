@@ -15,7 +15,10 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "payment_ref_no", unique = true)
     private String paymentRefNo;
+    @Column(name = "transaction_ref_no", unique = true)
+    private String transactionRefNo;
     private BigDecimal amount;
     private String ccy;
     private String crCcy;

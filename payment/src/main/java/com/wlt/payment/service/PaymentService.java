@@ -7,5 +7,4 @@ public interface PaymentService {
     void markGiftCodeAsRedeemed(Long userId, String code);
     GenerateGiftCodeResponseDto generateGiftCode(GenerateGiftCodeRequestDto generateGiftCodeRequestDto);
     GetExchangeRateAmountDto getExchangeRateAmount(GetExchangeRateAmountRequestDto getExchangeRateAmountRequestDto);
-    FundTransferResponseDto fundTransfer(Long userId, FundTransferRequestDto fundTransferRequestDto);
 }

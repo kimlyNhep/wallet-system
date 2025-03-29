@@ -1,6 +1,7 @@
 package com.wlt.payment.controller;
 
 import com.wlt.payment.dto.*;
+import com.wlt.payment.service.FundTransferService;
 import com.wlt.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,17 +31,6 @@ public class PaymentController {
         SuccessResponse<GetExchangeRateAmountDto> successResponse = new SuccessResponse<>();
         successResponse.setMessage("success");
         successResponse.setData(paymentService.getExchangeRateAmount(getExchangeRateAmountRequestDto));
-        return new ResponseEntity<>(successResponse, HttpStatus.OK);
-    }
-
-    @PostMapping("/api/v1/fund-transfer")
-    public ResponseEntity<SuccessResponse<FundTransferResponseDto>> makeFundTransfer(
-            @RequestHeader("user-id") Long userId,
-            @RequestBody FundTransferRequestDto fundTransferRequestDto
-    ) {
-        SuccessResponse<FundTransferResponseDto> successResponse = new SuccessResponse<>();
-        successResponse.setMessage("success");
-        successResponse.setData(paymentService.fundTransfer(userId, fundTransferRequestDto));
         return new ResponseEntity<>(successResponse, HttpStatus.OK);
     }
 }

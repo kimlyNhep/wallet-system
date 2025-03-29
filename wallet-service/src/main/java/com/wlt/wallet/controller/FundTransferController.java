@@ -24,7 +24,7 @@ public class FundTransferController {
             ) {
         SuccessResponse<FundTransferResponseDto> successResponse = new SuccessResponse<>();
         successResponse.setMessage("success");
-        successResponse.setData(fundTransferService.fundTransfer(userId, requestDto));
+        successResponse.setData(fundTransferService.initFundTransfer(userId, requestDto));
         return ResponseEntity.ok(successResponse);
     }
 }
