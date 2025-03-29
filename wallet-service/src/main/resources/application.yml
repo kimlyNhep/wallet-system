@@ -1,0 +1,51 @@
+rabbitmq:
+  exchange:
+    user: user.exchange
+    gift-code: gift-code.exchange
+    fund-transfer: fund-transfer.exchange
+    wallet: wallet.exchange
+  queue:
+    wallet-creation: wallet.creation.queue
+    gift-code:
+      redeem: gift-code.redeem.queue
+    fund-transfer: fund-transfer.queue
+    wallet: wallet.update.queue
+  routing-key:
+    user-created: user.created
+    gift-code:
+      redeem: gift-code.redeem.routing-key
+    fund-transfer: fund-transfer.routing-key
+    wallet: wallet.update.routing-key
+
+spring:
+  application:
+    name: wallet-service
+  datasource:
+    url: jdbc:postgresql://localhost:9000/wlt_dev_db
+    username: admin
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    listener:
+      simple:
+        acknowledge-mode: auto
+    host: localhost
+    port: 5672
+    username: myuser
+    password: mypassword
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+payment:
+  service:
+    base-url: http://localhost:8083
+
+server:
+  port: 8082
