@@ -2,6 +2,7 @@ package com.wlt.payment.consumer;
 
 import com.wlt.payment.dto.GiftCodeRedeemEvent;
 import com.wlt.payment.service.PaymentService;
+import com.wlt.payment.service.TopUpBalanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -12,12 +13,11 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class GiftCodeConsumer {
 
-    private final PaymentService paymentService;
+    private final TopUpBalanceService topUpBalanceService;
 
     @RabbitListener(queues = "${rabbitmq.queue.gift-code.redeem}")
-    public void handleUserCreatedEvent(GiftCodeRedeemEvent event) {
+    public void handleRedeemGiftCode(GiftCodeRedeemEvent event) {
         Long userId = event.getUserId();
-        String giftCode = event.getGiftCode();
-        paymentService.markGiftCodeAsRedeemed(userId, giftCode);
+        topUpBalanceService.redeemGiftCode(userId, event);
     }
 }

@@ -8,29 +8,24 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class RabbitmqConfig {
-    @Value("${rabbitmq.exchange.user}")
-    private String userExchange;
-
-    @Value("${rabbitmq.queue.wallet-creation}")
-    private String walletCreationQueue;
-
-    @Value("${rabbitmq.routing-key.user-created}")
-    private String userCreatedRoutingKey;
+public class RabbitmqConfig extends ApplicationPropertyConfig{
 
     @Bean
-    public Exchange userExchange() {
-        return ExchangeBuilder.topicExchange(userExchange).durable(true).build();
+    public Exchange transactionHistoryExchange() {
+        return ExchangeBuilder.topicExchange(transactionHistoryExchange).durable(true).build();
     }
 
     @Bean
-    public Queue walletCreationQueue() {
-        return QueueBuilder.durable(walletCreationQueue).build();
+    public Queue transactionHistoryQueue() {
+        return QueueBuilder.durable(transactionHistoryQueue).build();
     }
 
     @Bean
-    public Binding walletCreationBinding(Queue walletCreationQueue, Exchange userExchange) {
-        return BindingBuilder.bind(walletCreationQueue).to(userExchange).with(userCreatedRoutingKey).noargs();
+    public Binding transactionHistoryBinding(Queue transactionHistoryQueue, Exchange transactionHistoryExchange) {
+        return BindingBuilder.bind(transactionHistoryQueue)
+                .to(transactionHistoryExchange)
+                .with(transactionHistoryRoutingKey)
+                .noargs();
     }
 
     @Bean

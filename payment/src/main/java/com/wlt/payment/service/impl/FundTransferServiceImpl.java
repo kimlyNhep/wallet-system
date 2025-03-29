@@ -19,8 +19,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,11 @@ public class FundTransferServiceImpl implements FundTransferService {
     @Value("${rabbitmq.routing-key.fund-transfer}")
     private String fundTransferRoutingKey;
 
+    @Value("${rabbitmq.exchange.transaction.history}")
+    private String transactionHistoryExchange;
+
+    @Value("${rabbitmq.routing-key.transaction.history}")
+    private String transactionHistoryRoutingKey;
 
     private final RestTemplate restTemplate;
     private final RabbitTemplate rabbitTemplate;
@@ -47,7 +54,8 @@ public class FundTransferServiceImpl implements FundTransferService {
         headers.add("Content-Type", "application/json");
         headers.add("Collation-id", UUID.randomUUID().toString());
 
-        getInitTransaction(fundTransferRequestDto.getPaymentRefNo(), fundTransferRequestDto);
+        Transaction initTransaction = getInitTransaction(fundTransferRequestDto.getPaymentRefNo(), fundTransferRequestDto);
+        transactionRepository.save(initTransaction);
 
         ResponseEntity<SuccessResponse<WalletAccountResponseDto>> drWalletResponseEntity = restTemplate.exchange(
                 walletServiceUrl + "/api/v1/account/" + fundTransferRequestDto.getDrWalletId(),
@@ -79,9 +87,6 @@ public class FundTransferServiceImpl implements FundTransferService {
         } else {
             throw new RuntimeException("Transaction acknowledgement failed");
         }
-
-        Transaction transaction = getInitTransaction(fundTransferRequestDto.getPaymentRefNo(), fundTransferRequestDto);
-        transactionRepository.save(transaction);
 
         FundTransferResponseDto responseDto = new FundTransferResponseDto();
         responseDto.setCcy(fundTransferRequestDto.getCcy());
@@ -136,6 +141,26 @@ public class FundTransferServiceImpl implements FundTransferService {
                                 sucessTransaction.setTransactionRefNo(tranRefNo);
                                 transactionRepository.save(sucessTransaction);
 
+                                CompletableFuture.runAsync(() -> {
+                                    TransactionHistoryEvent transactionHistoryEvent = new TransactionHistoryEvent();
+                                    transactionHistoryEvent.setCrAmount(creditBalanceResponse.getData().getBalance());
+                                    transactionHistoryEvent.setCrCcy(creditBalanceResponse.getData().getCcy());
+                                    transactionHistoryEvent.setDrAmount(debitBalanceResponseDto.getData().getBalance());
+                                    transactionHistoryEvent.setDrCcy(debitBalanceResponseDto.getData().getCcy());
+                                    transactionHistoryEvent.setTransactionRefNo(tranRefNo);
+                                    transactionHistoryEvent.setAmount(fundTransferRequestDto.getAmount());
+                                    transactionHistoryEvent.setStatus(Status.SUCCESS);
+                                    transactionHistoryEvent.setExchangeRate(creditBalanceResponse.getData().getExchangeRate());
+                                    transactionHistoryEvent.setAmount(fundTransferRequestDto.getAmount());
+                                    transactionHistoryEvent.setTxnCcy(fundTransferRequestDto.getCcy());
+                                    transactionHistoryEvent.setSaveTimestamp(LocalDateTime.now());
+                                    transactionHistoryEvent.setUserId(userId);
+                                    transactionHistoryEvent.setCrWalletId(fundTransferRequestDto.getCrWalletId());
+                                    transactionHistoryEvent.setDrWalletId(fundTransferRequestDto.getDrWalletId());
+                                    transactionHistoryEvent.setTransactionType("FUND_TRANSFER");
+                                    rabbitTemplate.convertAndSend(transactionHistoryExchange, transactionHistoryRoutingKey, transactionHistoryEvent);
+                                });
+
                                 ConfirmFundTransferResponseDto responseDto = new ConfirmFundTransferResponseDto();
                                 responseDto.setPaymentRefNo(fundTransferRequestDto.getPaymentRefNo());
                                 responseDto.setTransactionRefNo(tranRefNo);
@@ -161,6 +186,7 @@ public class FundTransferServiceImpl implements FundTransferService {
         if (transactionOptional.isPresent()) {
             Transaction transaction = transactionOptional.get();
             transaction.setStatus(Status.PENDING);
+            transactionRepository.save(transaction);
 
             TransferAcknowledgementResponseDto responseDto = new TransferAcknowledgementResponseDto();
             responseDto.setStatus("APPROVED");
@@ -182,7 +208,6 @@ public class FundTransferServiceImpl implements FundTransferService {
         transaction.setExchangeRate(BigDecimal.ZERO);
         transaction.setStatus(Status.INIT);
         transaction.setPaymentRefNo(paymentRefNo);
-        transactionRepository.save(transaction);
         return transaction;
     }
 }

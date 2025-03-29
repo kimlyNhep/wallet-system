@@ -3,47 +3,14 @@ package com.wlt.payment.config;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class RabbitMqConfig {
-    @Value("${rabbitmq.exchange.gift-code}")
-    private String giftCodeExchange;
-
-    @Value("${rabbitmq.queue.gift-code.redeem}")
-    private String redeemGiftCodeQueue;
-
-    @Value("${rabbitmq.routing-key.gift-code.redeem}")
-    private String redeemGiftCodeRoutingKey;
-
-    @Value("${rabbitmq.exchange.fund-transfer}")
-    private String fundTransferExchange;
-
-    @Value("${rabbitmq.routing-key.fund-transfer}")
-    private String fundTransferRoutingKey;
-
-    @Value("${rabbitmq.queue.fund-transfer}")
-    private String fundTransferQueue;
-
-    @Value("${rabbitmq.exchange.wallet}")
-    private String walletExchange;
-
-    @Value("${rabbitmq.routing-key.wallet}")
-    private String walletUpdateRoutingKey;
-
-    @Value("${rabbitmq.queue.wallet}")
-    private String walletUpdateQueue;
-
+public class RabbitMqConfig extends ApplicationPropertyConfig {
     @Bean
     public Exchange fundTransferExchange() {
         return ExchangeBuilder.topicExchange(fundTransferExchange).durable(true).build();
-    }
-
-    @Bean
-    public Queue fundTransferQueue() {
-        return QueueBuilder.durable(fundTransferQueue).build();
     }
 
     @Bean
@@ -52,8 +19,23 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Exchange transactionHistoryExchange() {
+        return ExchangeBuilder.topicExchange(transactionHistoryExchange).durable(true).build();
+    }
+
+    @Bean
+    public Queue fundTransferQueue() {
+        return QueueBuilder.durable(fundTransferQueue).build();
+    }
+
+    @Bean
     public Queue walletUpdateQueue() {
         return QueueBuilder.durable(walletUpdateQueue).build();
+    }
+
+    @Bean
+    public Queue transactionHistoryQueue() {
+        return QueueBuilder.durable(transactionHistoryQueue).build();
     }
 
     @Bean
@@ -91,6 +73,15 @@ public class RabbitMqConfig {
                 .bind(walletUpdateQueue)
                 .to(walletUpdateExchange)
                 .with(walletUpdateRoutingKey)
+                .noargs();
+    }
+
+    @Bean
+    public Binding transactionHistoryBinding(Queue transactionHistoryQueue, Exchange transactionHistoryExchange) {
+        return BindingBuilder
+                .bind(transactionHistoryQueue)
+                .to(transactionHistoryExchange)
+                .with(transactionHistoryRoutingKey)
                 .noargs();
     }
 

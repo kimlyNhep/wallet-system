@@ -16,17 +16,6 @@ public class FundTransferController {
 
     private final FundTransferService fundTransferService;
 
-    @PostMapping("/api/v1/fund-transfer")
-    public ResponseEntity<SuccessResponse<FundTransferResponseDto>> makeFundTransfer(
-            @RequestHeader("user-id") Long userId,
-            @RequestBody FundTransferRequestDto fundTransferRequestDto
-    ) {
-        SuccessResponse<FundTransferResponseDto> successResponse = new SuccessResponse<>();
-        successResponse.setMessage("success");
-        successResponse.setData(fundTransferService.initFundTransfer(userId, fundTransferRequestDto));
-        return new ResponseEntity<>(successResponse, HttpStatus.OK);
-    }
-
     @PostMapping("/api/v1/make-acknowledgement")
     public ResponseEntity<SuccessResponse<TransferAcknowledgementResponseDto>> makeAcknowledgement(@RequestBody TransferAcknowledgementRequestDto acknowledgementRequestDto) {
         SuccessResponse<TransferAcknowledgementResponseDto> successResponse = new SuccessResponse<>();

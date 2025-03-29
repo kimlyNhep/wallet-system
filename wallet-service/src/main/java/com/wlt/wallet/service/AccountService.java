@@ -7,4 +7,5 @@ public interface AccountService {
     WalletAccountResponseDto createWallet(Long userId, CreateWalletAccountRequestDto createWalletAccountRequestDto);
     AccountBalanceResponseDto creditAccountBalance(Long userId, CreditAccountBalanceRequestDto creditAccountBalanceRequestDto);
     AccountBalanceResponseDto debitAccountBalance(Long userId, DebitAccountBalanceRequestDto debitAccountBalanceRequestDto);
+
 }

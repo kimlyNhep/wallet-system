@@ -1,32 +1,17 @@
 rabbitmq:
   exchange:
-    gift-code: gift-code.exchange
-    fund-transfer: fund-transfer.exchange
-    wallet: wallet.exchange
     transaction:
       history: transaction.history.exchange
   queue:
-    gift-code:
-      redeem: gift-code.redeem.queue
-    fund-transfer: fund-transfer.queue
-    init:
-      fund-transfer: init.fund-transfer.queue
-    wallet: wallet.update.queue
     transaction:
       history: transaction.history.queue
   routing-key:
-    gift-code:
-      redeem: gift-code.redeem.routing-key
-    fund-transfer: fund-transfer.routing-key
-    init:
-      fund-transfer: init.fund-transfer.routing-key
-    wallet: wallet.update.routing-key
     transaction:
       history: transaction.history.routing-key
 
 spring:
   application:
-    name: payment-service
+    name: transaction-service
   datasource:
     url: jdbc:postgresql://localhost:9000/wlt_dev_db
     username: admin
@@ -45,14 +30,5 @@ spring:
     port: 5672
     username: myuser
     password: mypassword
-  data:
-    redis:
-      host: localhost
-      port: 6379
-
-wallet:
-  service:
-    base-url: http://localhost:8082
-
 server:
-  port: 8083
+  port: 8084

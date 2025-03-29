@@ -1,5 +1,6 @@
 package com.wlt.wallet.service.impl;
 
+import com.wlt.wallet.constants.CommonConstants;
 import com.wlt.wallet.dto.*;
 import com.wlt.wallet.entity.WalletAccount;
 import com.wlt.wallet.repository.WalletAccountRepository;
@@ -66,7 +67,7 @@ public class GiftCodeServiceImpl implements GiftCodeService {
                     BigDecimal giftAmount = responseBody.getData().getAmount();
                     String ccy = responseBody.getData().getCcy();
 
-                    Optional<WalletAccount> walletAccountOptional = walletAccountRepository.findByUserId(userId);
+                    Optional<WalletAccount> walletAccountOptional = walletAccountRepository.findByIdAndStatus(requestDto.getCreditWalletId(), CommonConstants.ACTIVE);
                     if (walletAccountOptional.isPresent()) {
                         WalletAccount walletAccount = walletAccountOptional.get();
                         if (giftAmount.compareTo(BigDecimal.ZERO) > 0) {

@@ -1,14 +1,12 @@
-package com.wlt.payment.dto;
+package com.wlt.wallet.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class GiftCodeRedeemEvent {
-    private String giftCode;
-    private Long creditWalletId;
+public class RefundTransactionResponseDto {
+    private String paymentRefNo;
+    private String refundRefNo;
 }

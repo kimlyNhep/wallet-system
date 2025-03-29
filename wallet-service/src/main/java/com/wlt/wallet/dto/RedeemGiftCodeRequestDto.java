@@ -10,4 +10,5 @@ import lombok.Setter;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RedeemGiftCodeRequestDto {
     private String giftCode;
+    private Long creditWalletId;
 }

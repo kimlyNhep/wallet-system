@@ -59,6 +59,8 @@ public class AccountServiceImpl implements AccountService {
         if (creditWalletAccountOptional.isPresent()) {
             WalletAccount creditWalletAccount = creditWalletAccountOptional.get();
             String walletCcy = creditWalletAccount.getCcy();
+            BigDecimal creditBalance = BigDecimal.ZERO;
+            BigDecimal exchangeRate = BigDecimal.ZERO;
             if (!walletCcy.equals(creditAccountBalanceRequestDto.getCcy())) {
                 MultiValueMap<String, String> headers = new HttpHeaders();
                 headers.add("Content-Type", "application/json");
@@ -79,25 +81,31 @@ public class AccountServiceImpl implements AccountService {
                     SuccessResponse<GetExchangeRateResponseDto> rate = exchangeRateEntity.getBody();
                     if (rate != null && rate.getData() != null) {
                         GetExchangeRateResponseDto exchangeRateResponseDto = rate.getData();
-                        BigDecimal balance = creditAccountBalanceRequestDto.getCreditBalance().multiply(exchangeRateResponseDto.getRate());
-                        BigDecimal newBalance = creditWalletAccount.getBalance().add(balance);
+                        exchangeRate = exchangeRateResponseDto.getRate();
+                        creditBalance = creditAccountBalanceRequestDto.getCreditBalance().multiply(exchangeRate);
+                        BigDecimal newBalance = creditWalletAccount.getBalance().add(creditBalance);
                         creditWalletAccount.setBalance(newBalance);
                         walletAccountRepository.save(creditWalletAccount);
                     }
                 }
             } else {
-                BigDecimal balance = creditAccountBalanceRequestDto.getCreditBalance();
-                BigDecimal newBalance = creditWalletAccount.getBalance().add(balance);
+                creditBalance = creditAccountBalanceRequestDto.getCreditBalance();
+                BigDecimal newBalance = creditWalletAccount.getBalance().add(creditBalance);
                 creditWalletAccount.setBalance(newBalance);
                 walletAccountRepository.save(creditWalletAccount);
             }
+
+            AccountBalanceResponseDto responseDto = new AccountBalanceResponseDto();
+            responseDto.setStatus("SUCCESS");
+            responseDto.setBalance(creditBalance);
+            responseDto.setExchangeRate(exchangeRate);
+            responseDto.setCcy(walletCcy);
+            return responseDto;
+
         } else {
             throw new RuntimeException("Wallet account not found");
         }
 
-        AccountBalanceResponseDto responseDto = new AccountBalanceResponseDto();
-        responseDto.setStatus("SUCCESS");
-        return responseDto;
     }
 
     @Override
@@ -106,6 +114,8 @@ public class AccountServiceImpl implements AccountService {
         if (debitWalletAccountOptional.isPresent()) {
             WalletAccount debitWalletAccount = debitWalletAccountOptional.get();
             String walletCcy = debitWalletAccount.getCcy();
+            BigDecimal debitBalance = BigDecimal.ZERO;
+            BigDecimal exchangeRate = BigDecimal.ZERO;
             if (!walletCcy.equals(debitAccountBalanceRequestDto.getCcy())) {
                 MultiValueMap<String, String> headers = new HttpHeaders();
                 headers.add("Content-Type", "application/json");
@@ -126,10 +136,11 @@ public class AccountServiceImpl implements AccountService {
                     SuccessResponse<GetExchangeRateResponseDto> rate = exchangeRateEntity.getBody();
                     if (rate != null && rate.getData() != null) {
                         GetExchangeRateResponseDto exchangeRateResponseDto = rate.getData();
-                        BigDecimal balance = debitAccountBalanceRequestDto.getDebitBalance().multiply(exchangeRateResponseDto.getRate());
+                        exchangeRate = exchangeRateResponseDto.getRate();
+                        BigDecimal balance = debitAccountBalanceRequestDto.getDebitBalance().multiply(exchangeRate);
                         if (debitWalletAccount.getBalance().compareTo(balance) > 0) {
-                            BigDecimal newBalance = debitWalletAccount.getBalance().subtract(balance);
-                            debitWalletAccount.setBalance(newBalance);
+                            debitBalance = debitWalletAccount.getBalance().subtract(balance);
+                            debitWalletAccount.setBalance(debitBalance);
                             walletAccountRepository.save(debitWalletAccount);
                         } else {
                             throw new RuntimeException("insufficient balance");
@@ -138,16 +149,19 @@ public class AccountServiceImpl implements AccountService {
                 }
             } else {
                 BigDecimal balance = debitAccountBalanceRequestDto.getDebitBalance();
-                BigDecimal newBalance = debitWalletAccount.getBalance().subtract(balance);
-                debitWalletAccount.setBalance(newBalance);
+                debitBalance = debitWalletAccount.getBalance().subtract(balance);
+                debitWalletAccount.setBalance(debitBalance);
                 walletAccountRepository.save(debitWalletAccount);
             }
+
+            AccountBalanceResponseDto responseDto = new AccountBalanceResponseDto();
+            responseDto.setStatus("SUCCESS");
+            responseDto.setBalance(debitBalance);
+            responseDto.setExchangeRate(exchangeRate);
+            responseDto.setCcy(walletCcy);
+            return responseDto;
         } else {
             throw new RuntimeException("Wallet account not found");
         }
-
-        AccountBalanceResponseDto responseDto = new AccountBalanceResponseDto();
-        responseDto.setStatus("SUCCESS");
-        return responseDto;
     }
 }
