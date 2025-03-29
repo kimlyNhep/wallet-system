@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FundTransferRequestDto {
-    private String paymentRefNo;
+//    private String paymentRefNo;
     private Long crWalletId;
     private String crCcy;
     private String drCcy;

@@ -9,12 +9,10 @@ import java.math.BigDecimal;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FundTransferResponseDto {
-    private String paymentRefNo;
     private Long crWalletId;
-    private BigDecimal crAmount;
     private String crCcy;
-    private BigDecimal drAmount;
     private String drCcy;
     private Long drWalletId;
     private String ccy;
+    private BigDecimal Amount;
 }

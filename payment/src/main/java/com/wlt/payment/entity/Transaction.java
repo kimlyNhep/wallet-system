@@ -15,15 +15,18 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String paymentRefNo;
     private BigDecimal amount;
     private String ccy;
-    private BigDecimal crAmount;
     private String crCcy;
-    private BigDecimal drAmount;
     private String drCcy;
     private String description;
-    private String crWalletId;
-    private String drWalletId;
+    private Long crWalletId;
+    private Long drWalletId;
     private BigDecimal exchangeRate;
-    private LocalDateTime saveTimestamp;
+    private String status;
+    private LocalDateTime createdAt;
+    private String createdBy;
+    private LocalDateTime updatedAt;
+    private String updatedBy;
 }

@@ -33,12 +33,14 @@ public class PaymentController {
         return new ResponseEntity<>(successResponse, HttpStatus.OK);
     }
 
-//    @PostMapping("/api/v1/fund-transfer/init")
-//    public ResponseEntity<SuccessResponse<FundTransferResponseDto>> makeFundTransfer(
-//            @RequestBody FundTransferRequestDto fundTransferRequestDto) {
-//        SuccessResponse<FundTransferResponseDto> successResponse = new SuccessResponse<>();
-//        successResponse.setMessage("success");
-//        successResponse.setData(paymentService.fundTransfer(fundTransferRequestDto));
-//        return new ResponseEntity<>(successResponse, HttpStatus.OK);
-//    }
+    @PostMapping("/api/v1/fund-transfer")
+    public ResponseEntity<SuccessResponse<FundTransferResponseDto>> makeFundTransfer(
+            @RequestHeader("user-id") Long userId,
+            @RequestBody FundTransferRequestDto fundTransferRequestDto
+    ) {
+        SuccessResponse<FundTransferResponseDto> successResponse = new SuccessResponse<>();
+        successResponse.setMessage("success");
+        successResponse.setData(paymentService.fundTransfer(userId, fundTransferRequestDto));
+        return new ResponseEntity<>(successResponse, HttpStatus.OK);
+    }
 }
