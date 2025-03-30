@@ -15,11 +15,12 @@ public class WalletAccountController {
 
     @GetMapping("/api/v1/account/{id}")
     public ResponseEntity<SuccessResponse<GetWalletResponseDto>> getWalletResponse(
+            @RequestHeader("user-id") Long userId,
             @PathVariable("id") Long id
     ) {
         SuccessResponse<GetWalletResponseDto> successResponse = new SuccessResponse<>();
         successResponse.setMessage("success");
-        successResponse.setData(accountService.getWallet(id));
+        successResponse.setData(accountService.getWallet(userId, id));
         return ResponseEntity.ok(successResponse);
     }
 

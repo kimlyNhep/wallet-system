@@ -14,9 +14,11 @@ import com.wlt.user.repository.UserRepository;
 import com.wlt.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -27,6 +29,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final RoleCacheService roleCacheService;
 
     @Override
     @SneakyThrows
@@ -41,7 +44,7 @@ public class UserServiceImpl implements UserService {
         userEntity.setPasswordHash(passwordEncoder.encode(userRegisterRequestDto.getPassword()));
         userEntity.setEnabled(true);
 
-        Optional<Role> userRole = roleRepository.findByName(RoleName.USER.name());
+        Optional<Role> userRole = roleCacheService.getRoles(RoleName.USER.name());
         if (userRole.isEmpty()) {
             throw new RuntimeException("Super admin role not found");
         }

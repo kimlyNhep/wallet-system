@@ -37,7 +37,6 @@ public class TopUpBalanceServiceImpl extends ApplicationPropertyConfig implement
     private final RabbitTemplate rabbitTemplate;
 
     private final GiftCodeRepository giftCodeRepository;
-    private final PaymentService paymentService;
 
     private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 12;

@@ -8,6 +8,7 @@ import com.wlt.wallet.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -32,7 +33,8 @@ public class AccountServiceImpl implements AccountService {
     private final RestTemplate restTemplate;
 
     @Override
-    public GetWalletResponseDto getWallet(Long id) {
+    @Cacheable(key = "#userId.toString() + ':' + #id.toString()", value = "getWalletData")
+    public GetWalletResponseDto getWallet(Long userId, Long id) {
         Optional<WalletAccount> walletAccount = walletAccountRepository.findByIdAndStatus(id, CommonConstants.ACTIVE);
         GetWalletResponseDto getWalletResponseDto = new GetWalletResponseDto();
         walletAccount.ifPresent(account -> BeanUtils.copyProperties(account, getWalletResponseDto));
@@ -98,7 +100,7 @@ public class AccountServiceImpl implements AccountService {
             AccountBalanceResponseDto responseDto = new AccountBalanceResponseDto();
             responseDto.setStatus("SUCCESS");
             responseDto.setBalance(creditBalance);
-            responseDto.setExchangeRate(exchangeRate);
+            responseDto.setExchangeRate(exchangeRate.floatValue());
             responseDto.setCcy(walletCcy);
             return responseDto;
 
@@ -157,7 +159,7 @@ public class AccountServiceImpl implements AccountService {
             AccountBalanceResponseDto responseDto = new AccountBalanceResponseDto();
             responseDto.setStatus("SUCCESS");
             responseDto.setBalance(debitBalance);
-            responseDto.setExchangeRate(exchangeRate);
+            responseDto.setExchangeRate(exchangeRate.floatValue());
             responseDto.setCcy(walletCcy);
             return responseDto;
         } else {

@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+user:
+  service:
+    base-url: http://localhost:8081
+
 spring:
   main:
     web-application-type: reactive

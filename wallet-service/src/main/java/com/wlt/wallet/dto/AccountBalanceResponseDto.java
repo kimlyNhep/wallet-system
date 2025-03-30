@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AccountBalanceResponseDto {
     private String status;
-    private BigDecimal exchangeRate;
+    private float exchangeRate;
     private BigDecimal balance;
     private String ccy;
 }

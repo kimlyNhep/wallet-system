@@ -1,6 +1,5 @@
 package com.wlt.payment.config;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
 public class ApplicationPropertyConfig {

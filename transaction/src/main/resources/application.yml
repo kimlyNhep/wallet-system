@@ -10,6 +10,9 @@ rabbitmq:
       history: transaction.history.routing-key
 
 spring:
+  sql:
+    init:
+      mode: always
   application:
     name: transaction-service
   datasource:

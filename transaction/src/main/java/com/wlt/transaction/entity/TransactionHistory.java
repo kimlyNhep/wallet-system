@@ -24,7 +24,7 @@ public class TransactionHistory {
     private BigDecimal amount;
     private BigDecimal crAmount;
     private BigDecimal drAmount;
-    private BigDecimal exchangeRate;
+    private float exchangeRate;
     private LocalDateTime saveTimestamp;
     private String status;
 }
