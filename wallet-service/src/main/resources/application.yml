@@ -4,6 +4,9 @@ rabbitmq:
     gift-code: gift-code.exchange
     fund-transfer: fund-transfer.exchange
     wallet: wallet.exchange
+    balance-update: balance-update.exchange
+    transaction:
+      history: transaction.history.exchange
   queue:
     wallet-creation: wallet.creation.queue
     gift-code:
@@ -12,6 +15,9 @@ rabbitmq:
     init:
       fund-transfer: init.fund-transfer.queue
     wallet: wallet.update.queue
+    balance-update: balance-update.queue
+    transaction:
+      history: transaction.history.queue
   routing-key:
     user-created: user.created
     gift-code:
@@ -20,6 +26,9 @@ rabbitmq:
     init:
       fund-transfer: init.fund-transfer.routing-key
     wallet: wallet.update.routing-key
+    balance-update: balance-update.routing-key
+    transaction:
+      history: transaction.history.routing-key
 
 spring:
   application:

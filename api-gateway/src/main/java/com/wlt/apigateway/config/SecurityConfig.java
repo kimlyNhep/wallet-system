@@ -19,6 +19,7 @@ public class SecurityConfig {
         http.authorizeExchange(it -> it
                 .pathMatchers("/api/auth/v1/user/register").permitAll()
                 .pathMatchers("/api/auth/v1/login").permitAll()
+                .pathMatchers("/api/payment/v1/protected/gift-code/generate").hasAuthority("GEN_GIFT_CODE")
                 .anyExchange().authenticated());
         http.addFilterBefore(new JwtAuthorizationFilter(), SecurityWebFiltersOrder.AUTHENTICATION);
         return http.build();

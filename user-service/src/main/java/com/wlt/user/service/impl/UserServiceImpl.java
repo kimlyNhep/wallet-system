@@ -1,19 +1,19 @@
 package com.wlt.user.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wlt.user.constants.MessageEnum;
+import com.wlt.user.constants.RoleName;
+import com.wlt.user.dto.GrantRoleResponseDto;
 import com.wlt.user.dto.UserCreatedEvent;
 import com.wlt.user.dto.UserRegisterRequestDto;
 import com.wlt.user.dto.UserRegisterResponseDto;
 import com.wlt.user.entity.Role;
 import com.wlt.user.entity.User;
 import com.wlt.user.exception.CustomException;
+import com.wlt.user.repository.RoleRepository;
 import com.wlt.user.repository.UserRepository;
 import com.wlt.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,14 +26,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RabbitTemplate rabbitTemplate;
-    private final ObjectMapper objectMapper;
-
-    @Value("${rabbitmq.exchange.user}") // Define the exchange name in application.properties/yml
-    private String userExchange;
-
-    @Value("${rabbitmq.routing-key.user-created}") // Define the routing key in application.properties/yml
-    private String userCreatedRoutingKey;
+    private final RoleRepository roleRepository;
 
     @Override
     @SneakyThrows
@@ -47,7 +40,13 @@ public class UserServiceImpl implements UserService {
         userEntity.setEmail(userRegisterRequestDto.getEmail());
         userEntity.setPasswordHash(passwordEncoder.encode(userRegisterRequestDto.getPassword()));
         userEntity.setEnabled(true);
-        userEntity.setRoles(Set.of(Role.USER));
+
+        Optional<Role> userRole = roleRepository.findByName(RoleName.USER.name());
+        if (userRole.isEmpty()) {
+            throw new RuntimeException("Super admin role not found");
+        }
+
+        userEntity.setRoles(Set.of(userRole.get()));
         User userCreated = userRepository.save(userEntity);
         UserRegisterResponseDto response = new UserRegisterResponseDto();
         response.setUsername(userRegisterRequestDto.getEmail());
@@ -55,9 +54,42 @@ public class UserServiceImpl implements UserService {
         UserCreatedEvent userCreatedEvent = new UserCreatedEvent();
         userCreatedEvent.setUserId(userCreated.getId());
 
-//        String jsonString = objectMapper.writeValueAsString(userCreatedEvent);
-//        rabbitTemplate.convertAndSend(userExchange, userCreatedRoutingKey, userCreatedEvent);
+        return response;
+    }
 
+    @Override
+    public GrantRoleResponseDto grantRole(Long adminUserId, Long userId, String roleName) {
+        Optional<Role> superAdminRole = roleRepository.findByName(RoleName.SUPER_ADMIN.name());
+        if (superAdminRole.isEmpty()) {
+            throw new RuntimeException("Super admin role not found");
+        }
+
+        Optional<User> adminUser = userRepository.findByIdAndRoles(adminUserId, Set.of(superAdminRole.get()));
+        if (adminUser.isEmpty()) {
+            throw new RuntimeException("Admin user not found");
+        }
+
+        Optional<User> userOptional = userRepository.findByIdAndRoles(userId, Set.of());
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        Optional<Role> userRole = roleRepository.findByName(RoleName.USER.name());
+        if (userRole.isEmpty()) {
+            throw new RuntimeException("Super admin role not found");
+        }
+
+        Optional<Role> newRole = roleRepository.findByName(roleName);
+        if (newRole.isEmpty()) {
+            throw new RuntimeException("Role not found");
+        }
+
+        User user = userOptional.get();
+        user.setRoles(Set.of(newRole.get()));
+        userRepository.save(user);
+        GrantRoleResponseDto response = new GrantRoleResponseDto();
+        response.setRoleName(roleName);
+        response.setEmail(user.getEmail());
         return response;
     }
 }

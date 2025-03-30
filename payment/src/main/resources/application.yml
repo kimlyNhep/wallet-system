@@ -5,6 +5,7 @@ rabbitmq:
     wallet: wallet.exchange
     transaction:
       history: transaction.history.exchange
+    balance-update: balance-update.exchange
   queue:
     gift-code:
       redeem: gift-code.redeem.queue
@@ -14,15 +15,15 @@ rabbitmq:
     wallet: wallet.update.queue
     transaction:
       history: transaction.history.queue
+    balance-update: balance-update.queue
   routing-key:
     gift-code:
       redeem: gift-code.redeem.routing-key
     fund-transfer: fund-transfer.routing-key
-    init:
-      fund-transfer: init.fund-transfer.routing-key
     wallet: wallet.update.routing-key
     transaction:
       history: transaction.history.routing-key
+    balance-update: balance-update.routing-key
 
 spring:
   application:

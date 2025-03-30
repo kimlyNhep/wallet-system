@@ -9,6 +9,7 @@ import lombok.Setter;
 @Setter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GiftCodeRedeemEvent {
-    private String giftCode;
     private Long userId;
+    private String giftCode;
+    private Long creditWalletId;
 }

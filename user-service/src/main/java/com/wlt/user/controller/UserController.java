@@ -21,4 +21,6 @@ public class UserController {
         response.setResponse(userService.register(userRegisterRequestDto));
         return ResponseEntity.ok(response);
     }
+
+
 }

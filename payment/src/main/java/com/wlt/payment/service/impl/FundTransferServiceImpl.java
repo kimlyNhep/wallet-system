@@ -148,7 +148,6 @@ public class FundTransferServiceImpl implements FundTransferService {
                                     transactionHistoryEvent.setDrAmount(debitBalanceResponseDto.getData().getBalance());
                                     transactionHistoryEvent.setDrCcy(debitBalanceResponseDto.getData().getCcy());
                                     transactionHistoryEvent.setTransactionRefNo(tranRefNo);
-                                    transactionHistoryEvent.setAmount(fundTransferRequestDto.getAmount());
                                     transactionHistoryEvent.setStatus(Status.SUCCESS);
                                     transactionHistoryEvent.setExchangeRate(creditBalanceResponse.getData().getExchangeRate());
                                     transactionHistoryEvent.setAmount(fundTransferRequestDto.getAmount());

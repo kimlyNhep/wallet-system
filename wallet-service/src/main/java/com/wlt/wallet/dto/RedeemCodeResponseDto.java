@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class RedeemGiftCodeResponseDto {
+public class RedeemCodeResponseDto {
     private String giftCode;
-    private String description;
+    private String status;
 }

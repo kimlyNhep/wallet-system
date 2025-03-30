@@ -24,6 +24,11 @@ public class RabbitMqConfig extends ApplicationPropertyConfig {
     }
 
     @Bean
+    public Exchange balanceUpdateExchange() {
+        return ExchangeBuilder.topicExchange(balanceUpdateExchange).durable(true).build();
+    }
+
+    @Bean
     public Queue fundTransferQueue() {
         return QueueBuilder.durable(fundTransferQueue).build();
     }
@@ -46,6 +51,11 @@ public class RabbitMqConfig extends ApplicationPropertyConfig {
     @Bean
     public Queue redeemGiftCodeQueue() {
         return QueueBuilder.durable(redeemGiftCodeQueue).build();
+    }
+
+    @Bean
+    public Queue balanceUpdateQueue() {
+        return QueueBuilder.durable(balanceUpdateQueue).build();
     }
 
 
@@ -82,6 +92,15 @@ public class RabbitMqConfig extends ApplicationPropertyConfig {
                 .bind(transactionHistoryQueue)
                 .to(transactionHistoryExchange)
                 .with(transactionHistoryRoutingKey)
+                .noargs();
+    }
+
+    @Bean
+    public Binding balanceUpdateBinding(Queue balanceUpdateQueue, Exchange balanceUpdateExchange) {
+        return BindingBuilder
+                .bind(balanceUpdateQueue)
+                .to(balanceUpdateExchange)
+                .with(balanceUpdateRoutingKey)
                 .noargs();
     }
 

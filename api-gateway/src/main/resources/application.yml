@@ -22,7 +22,7 @@ spring:
           filters:
             - RewritePath=/api/wallet/v1/(?<segment>.*), /api/v1/$\{segment}
             - CustomHeaderFilter
-#
+
         - id: payment-service
           uri: http://localhost:8083 # Replace with the actual URL of your Transfer Service
           predicates:
@@ -30,19 +30,11 @@ spring:
           filters:
             - RewritePath=/api/payment/v1/(?<segment>.*), /api/v1/$\{segment}
             - CustomHeaderFilter
-#
-#        - id: transaction-history-service
-#          uri: http://localhost:8084 # Replace with the actual URL of your Transaction History Service
-#          predicates:
-#            - Path=/api/v1/history/**
-#          filters:
-#            - RewritePath=/api/v1/history/(?<segment>.*), /$\{segment}
-#            - CustomHeaderFilter
-#
-#        - id: notification-service
-#          uri: http://localhost:8085 # Replace with the actual URL of your Notification Service
-#          predicates:
-#            - Path=/api/v1/notifications/**
-#          filters:
-#            - RewritePath=/api/v1/notifications/(?<segment>.*), /$\{segment}
-#            - CustomHeaderFilter
+
+        - id: transaction-history-service
+          uri: http://localhost:8084 # Replace with the actual URL of your Transaction History Service
+          predicates:
+            - Path=/api/transaction/**
+          filters:
+            - RewritePath=/api/transaction/v1/(?<segment>.*), /api/v1/$\{segment}
+            - CustomHeaderFilter

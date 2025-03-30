@@ -3,53 +3,12 @@ package com.wlt.wallet.config;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class RabbitMqConfig {
-    @Value("${rabbitmq.exchange.user}")
-    private String userExchange;
-
-    @Value("${rabbitmq.exchange.gift-code}")
-    private String giftCodeExchange;
-
-    @Value("${rabbitmq.queue.wallet-creation}")
-    private String walletCreationQueue;
-
-    @Value("${rabbitmq.queue.gift-code.redeem}")
-    private String redeemGiftCodeQueue;
-
-    @Value("${rabbitmq.routing-key.user-created}")
-    private String userCreatedRoutingKey;
-
-    @Value("${rabbitmq.routing-key.gift-code.redeem}")
-    private String redeemGiftCodeRoutingKey;
-
-    @Value("${rabbitmq.exchange.fund-transfer}")
-    private String fundTransferExchange;
-
-    @Value("${rabbitmq.routing-key.fund-transfer}")
-    private String fundTransferRoutingKey;
-
-    @Value("${rabbitmq.queue.fund-transfer}")
-    private String fundTransferQueue;
-
-    @Value("${rabbitmq.queue.init.fund-transfer}")
-    private String initFundTransferQueue;
-
-    @Value("${rabbitmq.routing-key.init.fund-transfer}")
-    private String initFundTransferRoutingKey;
-
-    @Value("${rabbitmq.exchange.wallet}")
-    private String walletExchange;
-
-    @Value("${rabbitmq.routing-key.wallet}")
-    private String walletUpdateRoutingKey;
-
-    @Value("${rabbitmq.queue.wallet}")
-    private String walletUpdateQueue;
+public class RabbitMqConfig extends ApplicationPropertyConfig {
 
     @Bean
     public Exchange userExchange() {
@@ -69,6 +28,11 @@ public class RabbitMqConfig {
     @Bean
     public Exchange walletUpdateExchange() {
         return ExchangeBuilder.topicExchange(walletExchange).durable(true).build();
+    }
+
+    @Bean
+    public Exchange balanceUpdateExchange() {
+        return ExchangeBuilder.topicExchange(balanceUpdateExchange).durable(true).build();
     }
 
     @Bean
@@ -94,6 +58,11 @@ public class RabbitMqConfig {
     @Bean
     public Queue initFundTransferQueue() {
         return QueueBuilder.durable(initFundTransferQueue).build();
+    }
+
+    @Bean
+    public Queue balanceUpdateQueue() {
+        return QueueBuilder.durable(balanceUpdateQueue).build();
     }
 
     @Bean
@@ -142,12 +111,21 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Binding balanceUpdateBinding(Queue balanceUpdateQueue, Exchange balanceUpdateExchange) {
+        return BindingBuilder
+                .bind(balanceUpdateQueue)
+                .to(balanceUpdateExchange)
+                .with(balanceUpdateRoutingKey)
+                .noargs();
+    }
+
+    @Bean
     public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
     @Bean
-    public RabbitTemplate rabbitTemplate(org.springframework.amqp.rabbit.connection.ConnectionFactory connectionFactory) {
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(producerJackson2MessageConverter());
         return rabbitTemplate;

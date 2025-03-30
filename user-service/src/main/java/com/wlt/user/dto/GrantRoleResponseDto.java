@@ -1,4 +1,4 @@
-package com.wlt.wallet.dto;
+package com.wlt.user.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class RedeemGiftCodeResponseDto {
-    private String giftCode;
-    private String description;
+public class GrantRoleResponseDto {
+    private String email;
+    private String roleName;
 }
