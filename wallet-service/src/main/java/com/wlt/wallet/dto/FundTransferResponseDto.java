@@ -13,10 +13,10 @@ import java.math.BigDecimal;
 public class FundTransferResponseDto {
     private String paymentRefNo;
     private Long crWalletId;
-    private BigDecimal crAmount;
     private String crCcy;
-    private BigDecimal drAmount;
     private String drCcy;
     private Long drWalletId;
     private String ccy;
+    private BigDecimal amount;
+    private String message;
 }

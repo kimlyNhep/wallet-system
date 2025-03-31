@@ -47,4 +47,6 @@ public class ApplicationPropertyConfig {
 
     @Value("${rabbitmq.queue.balance-update}")
     protected String balanceUpdateQueue;
+    @Value("${wallet.service.base-url}")
+    protected String walletServiceUrl;
 }

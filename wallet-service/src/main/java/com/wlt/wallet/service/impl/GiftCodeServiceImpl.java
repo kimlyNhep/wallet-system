@@ -1,11 +1,13 @@
 package com.wlt.wallet.service.impl;
 
 import com.wlt.wallet.constants.CommonConstants;
+import com.wlt.wallet.constants.MessageError;
 import com.wlt.wallet.dto.GiftCodeRedeemEvent;
 import com.wlt.wallet.dto.RedeemCodeResponseDto;
 import com.wlt.wallet.dto.RedeemGiftCodeRequestDto;
 import com.wlt.wallet.dto.RedeemGiftCodeResponseDto;
 import com.wlt.wallet.entity.WalletAccount;
+import com.wlt.wallet.exception.CustomException;
 import com.wlt.wallet.provider.ServiceProvider;
 import com.wlt.wallet.repository.WalletAccountRepository;
 import com.wlt.wallet.service.GiftCodeService;
@@ -49,6 +51,6 @@ public class GiftCodeServiceImpl implements GiftCodeService {
             }
         }
 
-        throw new RuntimeException("Cannot redeem gift code");
+        throw new CustomException(MessageError.ERR_003_INVALID_GIFT_CODE);
     }
 }

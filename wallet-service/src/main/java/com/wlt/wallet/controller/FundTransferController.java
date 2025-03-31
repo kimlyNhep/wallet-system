@@ -1,8 +1,6 @@
 package com.wlt.wallet.controller;
 
-import com.wlt.wallet.dto.FundTransferResponseDto;
-import com.wlt.wallet.dto.InitFundTransferRequestDto;
-import com.wlt.wallet.dto.SuccessResponse;
+import com.wlt.wallet.dto.*;
 import com.wlt.wallet.service.FundTransferService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

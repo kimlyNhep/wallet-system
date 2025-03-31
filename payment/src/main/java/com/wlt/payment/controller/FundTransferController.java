@@ -23,4 +23,14 @@ public class FundTransferController {
         successResponse.setData(fundTransferService.makeAcknowledgement(acknowledgementRequestDto));
         return new ResponseEntity<>(successResponse, HttpStatus.OK);
     }
+
+    @PostMapping("/api/v1/transaction/status")
+    public ResponseEntity<SuccessResponse<TransactionStatusResponseDto>> getTransactionStatus(
+            @RequestBody TransferAcknowledgementRequestDto acknowledgementRequestDto
+    ) {
+        SuccessResponse<TransactionStatusResponseDto> successResponse = new SuccessResponse<>();
+        successResponse.setMessage("success");
+        successResponse.setData(fundTransferService.transactionStatus(acknowledgementRequestDto));
+        return new ResponseEntity<>(successResponse, HttpStatus.OK);
+    }
 }

@@ -1,7 +1,7 @@
-package com.wlt.user.exception;
+package com.wlt.payment.exception;
 
 
-import com.wlt.user.constants.MessageError;
+import com.wlt.payment.constants.MessageError;
 
 public class CustomException extends RuntimeException {
     private final MessageError errorCode;
