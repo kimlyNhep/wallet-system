@@ -42,6 +42,19 @@
    docker-compose up --build
    ```
 
+4. **Setup**
+
+   1. login with SUPER admin user : email: admin@gmail.com, password: password
+   2. use token to create wallet account
+
+5. **Role**
+   [USER, ADMIN, SUPER_ADMIN]
+
+   1. /api/auth/v1/user/grant/role
+      => only super_admin can access this api
+   2. /api/payment/v1/protected/gift-code/generate
+      => only admin, super_admin can access this api
+
 ### Note
 
 . /api/wallet/v1/account/{id}
