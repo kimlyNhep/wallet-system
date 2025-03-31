@@ -3,6 +3,7 @@ package com.wlt.payment.service.impl;
 import com.wlt.payment.config.ApplicationPropertyConfig;
 import com.wlt.payment.dto.*;
 import com.wlt.payment.entity.GiftCode;
+import com.wlt.payment.provider.ServiceProvider;
 import com.wlt.payment.repository.GiftCodeRepository;
 import com.wlt.payment.service.PaymentService;
 import com.wlt.payment.service.TopUpBalanceService;
@@ -30,12 +31,8 @@ import java.util.concurrent.CompletableFuture;
 @Service
 @RequiredArgsConstructor
 public class TopUpBalanceServiceImpl extends ApplicationPropertyConfig implements TopUpBalanceService {
-
-    @Value("${wallet.service.base-url}")
-    private String walletServiceUrl;
-    private final RestTemplate restTemplate;
     private final RabbitTemplate rabbitTemplate;
-
+    private final ServiceProvider serviceProvider;
     private final GiftCodeRepository giftCodeRepository;
 
     private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -107,48 +104,33 @@ public class TopUpBalanceServiceImpl extends ApplicationPropertyConfig implement
             BigDecimal giftAmount = giftCodeValidationResponseDto.getAmount();
             String giftCodeCcy = giftCodeValidationResponseDto.getCcy();
 
-            MultiValueMap<String, String> headers = new HttpHeaders();
-            headers.add("Content-Type", "application/json");
-            headers.add("Collation-id", UUID.randomUUID().toString());
-            headers.add("user-id", String.valueOf(userId));
+            WalletAccountResponseDto crWalletResponseEntityBody = serviceProvider.getWalletAccount(userId, giftCodeRedeemEvent.getCreditWalletId());
+            if (crWalletResponseEntityBody != null) {
+                GetExchangeRateAmountRequestDto exchangeRateAmountRequestDto = new GetExchangeRateAmountRequestDto();
+                exchangeRateAmountRequestDto.setCrCcy(crWalletResponseEntityBody.getCcy());
+                exchangeRateAmountRequestDto.setDrCcy(giftCodeCcy);
+                CreditAccountBalanceRequestDto creditAccountBalanceRequestDto = new CreditAccountBalanceRequestDto();
+                creditAccountBalanceRequestDto.setCcy(giftCodeCcy);
+                creditAccountBalanceRequestDto.setCreditBalance(giftAmount);
+                creditAccountBalanceRequestDto.setCreditWalletId(giftCodeRedeemEvent.getCreditWalletId());
 
-            ResponseEntity<SuccessResponse<WalletAccountResponseDto>> crWalletResponseEntity = restTemplate.exchange(
-                    walletServiceUrl + "/api/v1/account/" + giftCodeRedeemEvent.getCreditWalletId(),
-                    HttpMethod.GET,
-                    new HttpEntity<>(null, headers),
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
+                markGiftCodeAsRedeemed(userId, giftCodeRedeemEvent.getGiftCode());
 
-            if (crWalletResponseEntity.getStatusCode().is2xxSuccessful()) {
-                SuccessResponse<WalletAccountResponseDto> crWalletResponseEntityBody = crWalletResponseEntity.getBody();
-                if (crWalletResponseEntityBody != null && crWalletResponseEntityBody.getData() != null) {
-                    GetExchangeRateAmountRequestDto exchangeRateAmountRequestDto = new GetExchangeRateAmountRequestDto();
-                    exchangeRateAmountRequestDto.setCrCcy(crWalletResponseEntityBody.getData().getCcy());
-                    exchangeRateAmountRequestDto.setDrCcy(giftCodeCcy);
-                    CreditAccountBalanceRequestDto creditAccountBalanceRequestDto = new CreditAccountBalanceRequestDto();
-                    creditAccountBalanceRequestDto.setCcy(giftCodeCcy);
-                    creditAccountBalanceRequestDto.setCreditBalance(giftAmount);
-                    creditAccountBalanceRequestDto.setCreditWalletId(giftCodeRedeemEvent.getCreditWalletId());
+                CompletableFuture.runAsync(() -> {
+                    BalanceUpdateEvent event = new BalanceUpdateEvent();
+                    event.setBalance(giftAmount);
+                    event.setType("CREDIT");
+                    event.setUserId(userId);
+                    event.setWalletId(giftCodeRedeemEvent.getCreditWalletId());
+                    event.setCcy(giftCodeCcy);
+                    rabbitTemplate.convertAndSend(balanceUpdateExchange, balanceUpdateRoutingKey, event);
+                });
 
-                    markGiftCodeAsRedeemed(userId, giftCodeRedeemEvent.getGiftCode());
-
-                    CompletableFuture.runAsync(() -> {
-                        BalanceUpdateEvent event = new BalanceUpdateEvent();
-                        event.setBalance(giftAmount);
-                        event.setType("CREDIT");
-                        event.setUserId(userId);
-                        event.setWalletId(giftCodeRedeemEvent.getCreditWalletId());
-                        event.setCcy(giftCodeCcy);
-                        rabbitTemplate.convertAndSend(balanceUpdateExchange, balanceUpdateRoutingKey, event);
-                    });
-                }
+                RedeemGiftCodeResponseDto redeemGiftCodeResponseDto = new RedeemGiftCodeResponseDto();
+                redeemGiftCodeResponseDto.setGiftCode(giftCodeValidationResponseDto.getGiftCode());
+                redeemGiftCodeResponseDto.setStatus("REDEEMED");
+                return redeemGiftCodeResponseDto;
             }
-
-            RedeemGiftCodeResponseDto redeemGiftCodeResponseDto = new RedeemGiftCodeResponseDto();
-            redeemGiftCodeResponseDto.setGiftCode(giftCodeValidationResponseDto.getGiftCode());
-            redeemGiftCodeResponseDto.setStatus("REDEEMED");
-            return redeemGiftCodeResponseDto;
         }
 
         RedeemGiftCodeResponseDto redeemGiftCodeResponseDto = new RedeemGiftCodeResponseDto();
