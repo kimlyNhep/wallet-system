@@ -1,15 +1,16 @@
 package com.wlt.wallet.service.impl;
 
 import com.wlt.wallet.constants.CommonConstants;
+import com.wlt.wallet.constants.MessageError;
 import com.wlt.wallet.dto.*;
 import com.wlt.wallet.entity.WalletAccount;
+import com.wlt.wallet.exception.CustomException;
 import com.wlt.wallet.provider.ServiceProvider;
 import com.wlt.wallet.repository.WalletAccountRepository;
 import com.wlt.wallet.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -27,7 +28,7 @@ public class AccountServiceImpl implements AccountService {
         if (walletAccount.isPresent()) {
             Long userWalletId = walletAccount.get().getUserId();
             if (!userId.equals(userWalletId)) {
-                throw new RuntimeException("user cannot get other people wallet");
+                throw new CustomException(MessageError.ERR_004_CANNOT_QUERY_OTHER_WALLET);
             }
         }
         GetWalletResponseDto getWalletResponseDto = new GetWalletResponseDto();
@@ -86,7 +87,7 @@ public class AccountServiceImpl implements AccountService {
             return responseDto;
 
         } else {
-            throw new RuntimeException("Wallet account not found");
+            throw new CustomException(MessageError.ERR_002_WALLET_NOT_ENOUGH);
         }
 
     }
@@ -99,11 +100,11 @@ public class AccountServiceImpl implements AccountService {
             String walletCcy = debitWalletAccount.getCcy();
             BigDecimal debitBalance = BigDecimal.ZERO;
             BigDecimal exchangeRate = BigDecimal.ZERO;
+
             if (!walletCcy.equals(debitAccountBalanceRequestDto.getCcy())) {
                 GetExchangeRateRequestDto getExchangeRateRequestDto = new GetExchangeRateRequestDto();
                 getExchangeRateRequestDto.setCrCcy(walletCcy);
                 getExchangeRateRequestDto.setDrCcy(debitAccountBalanceRequestDto.getCcy());
-
                 GetExchangeRateResponseDto exchangeRateResponseDto = serviceProvider.getExchangeRate(getExchangeRateRequestDto);
 
                 if (exchangeRateResponseDto != null) {
@@ -115,7 +116,7 @@ public class AccountServiceImpl implements AccountService {
                         debitWalletAccount.setBalance(newBalance);
                         walletAccountRepository.save(debitWalletAccount);
                     } else {
-                        throw new RuntimeException("insufficient balance");
+                        throw new CustomException(MessageError.ERR_001_INSUFFICIENT_AMOUNT);
                     }
                 }
             } else {
@@ -132,7 +133,7 @@ public class AccountServiceImpl implements AccountService {
             responseDto.setCcy(walletCcy);
             return responseDto;
         } else {
-            throw new RuntimeException("Wallet account not found");
+            throw new CustomException(MessageError.ERR_002_WALLET_NOT_ENOUGH);
         }
     }
 }

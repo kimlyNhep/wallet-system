@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     Optional<Transaction> findByPaymentRefNoAndStatus(String paymentRefNo, String status);
+
+    Optional<Transaction> findByPaymentRefNo(String paymentRefNo);
 }

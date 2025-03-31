@@ -1,23 +1,21 @@
 package com.wlt.user.service.impl;
 
-import com.wlt.user.constants.MessageEnum;
+import com.wlt.user.constants.MessageError;
 import com.wlt.user.constants.RoleName;
 import com.wlt.user.dto.*;
 import com.wlt.user.entity.Role;
 import com.wlt.user.entity.User;
 import com.wlt.user.exception.CustomException;
-import com.wlt.user.repository.RoleRepository;
 import com.wlt.user.repository.UserRepository;
 import com.wlt.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +30,19 @@ public class UserServiceImpl implements UserService {
     public UserRegisterResponseDto register(UserRegisterRequestDto userRegisterRequestDto) {
         Optional<User> user = userRepository.findByEmail(userRegisterRequestDto.getEmail());
         if (user.isPresent()) {
-            throw new CustomException(MessageEnum.EMAIL_ALREADY_TAKEN);
+            throw new CustomException(MessageError.EMAIL_ALREADY_TAKEN);
+        }
+
+        final String EMAIL_REGEX =
+                "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+        final Pattern PATTERN = Pattern.compile(EMAIL_REGEX);
+
+        if (userRegisterRequestDto.getEmail() == null || userRegisterRequestDto.getEmail().isEmpty()) {
+            throw new CustomException(MessageError.EMAIL_CANNOT_BE_NULL);
+        }
+
+        if (!PATTERN.matcher(userRegisterRequestDto.getEmail()).matches()) {
+            throw new CustomException(MessageError.EMAIL_INVALID);
         }
 
         User userEntity = new User();
@@ -42,7 +52,7 @@ public class UserServiceImpl implements UserService {
 
         Optional<Role> userRole = roleCacheService.getRoles(RoleName.USER.name());
         if (userRole.isEmpty()) {
-            throw new RuntimeException("Super admin role not found");
+            throw new CustomException(MessageError.ROLE_NOT_FOUND);
         }
 
         userEntity.setRoles(Set.of(userRole.get()));
@@ -61,28 +71,28 @@ public class UserServiceImpl implements UserService {
     public GrantRoleResponseDto grantRole(Long adminUserId, GrantRoleRequestDto grantRoleRequestDto) {
         Optional<Role> superAdminRole = roleCacheService.getRoles(RoleName.SUPER_ADMIN.name());
         if (superAdminRole.isEmpty()) {
-            throw new RuntimeException("Super admin role not found");
+            throw new CustomException(MessageError.SUPER_ADMIN_NOT_FOUND);
         }
 
         Optional<User> adminUser = userRepository.findByIdAndRoles(adminUserId, Set.of(superAdminRole.get()));
         if (adminUser.isEmpty()) {
-            throw new RuntimeException("Admin user not found");
+            throw new CustomException(MessageError.USER_NOT_FOUND);
         }
 
         Optional<Role> userRole = roleCacheService.getRoles(RoleName.USER.name());
 
         if (userRole.isEmpty()) {
-            throw new RuntimeException("User role not found");
+            throw new CustomException(MessageError.ROLE_NOT_FOUND);
         }
 
         Optional<User> userOptional = userRepository.findByIdAndRoles(grantRoleRequestDto.getUserId(), Set.of(userRole.get()));
         if (userOptional.isEmpty()) {
-            throw new RuntimeException("User not found");
+            throw new CustomException(MessageError.USER_NOT_FOUND);
         }
 
         Optional<Role> newRole = roleCacheService.getRoles(grantRoleRequestDto.getRoleName());
         if (newRole.isEmpty()) {
-            throw new RuntimeException("Role not found");
+            throw new CustomException(MessageError.ROLE_NOT_FOUND);
         }
 
         User user = userOptional.get();

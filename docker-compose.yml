@@ -74,7 +74,6 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-      # - wallet-service
     environment:
       - RABBIT_HOST=rabbitmq
       - RABBIT_PORT=5672
