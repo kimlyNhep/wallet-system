@@ -53,6 +53,7 @@ public class FundTransferServiceImpl implements FundTransferService {
         MultiValueMap<String, String> headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         headers.add("Collation-id", UUID.randomUUID().toString());
+        headers.add("user-id", String.valueOf(userId));
 
         Transaction initTransaction = getInitTransaction(fundTransferRequestDto.getPaymentRefNo(), fundTransferRequestDto);
         transactionRepository.save(initTransaction);

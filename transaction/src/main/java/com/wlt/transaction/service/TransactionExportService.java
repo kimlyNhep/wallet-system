@@ -5,5 +5,5 @@ import com.wlt.transaction.dto.TransactionExportRequestDto;
 import java.io.OutputStream;
 
 public interface TransactionExportService {
-    void exportCSV(TransactionExportRequestDto request, OutputStream outputStream);
+    void exportCSV(Long userId, TransactionExportRequestDto request, OutputStream outputStream);
 }

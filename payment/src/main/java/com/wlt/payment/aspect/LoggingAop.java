@@ -1,4 +1,4 @@
-package com.wlt.wallet.aspect;
+package com.wlt.payment.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -9,7 +9,6 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.CodeSignature;
-import org.slf4j.MDC;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -21,8 +20,7 @@ import java.util.Map;
 @Aspect
 @Component
 public class LoggingAop {
-
-    @Around("execution(* com.wlt.wallet..*(..))")
+    @Around("execution(* com.wlt.payment..*(..))")
     public Object logAnyMethod(ProceedingJoinPoint joinPoint) throws Throwable {
         String[] parameterNames = ((CodeSignature) joinPoint.getSignature()).getParameterNames();
         Map<String, Object> requestData = new HashMap<>();

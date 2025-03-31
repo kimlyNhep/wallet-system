@@ -16,12 +16,10 @@ spring:
   application:
     name: transaction-service
   datasource:
-    url: jdbc:postgresql://localhost:9000/wlt_dev_db
-    username: admin
-    password: password
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
   jpa:
-    hibernate:
-      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -29,9 +27,7 @@ spring:
     listener:
       simple:
         acknowledge-mode: auto
-    host: localhost
-    port: 5672
-    username: myuser
-    password: mypassword
-server:
-  port: 8084
+    host: ${RABBIT_HOST}
+    port: ${RABBIT_PORT}
+    username: ${RABBIT_USERNAME}
+    password: ${RABBIT_PASSWORD}

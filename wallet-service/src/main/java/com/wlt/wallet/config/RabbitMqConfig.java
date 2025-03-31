@@ -11,11 +11,6 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMqConfig extends ApplicationPropertyConfig {
 
     @Bean
-    public Exchange userExchange() {
-        return ExchangeBuilder.topicExchange(userExchange).durable(true).build();
-    }
-
-    @Bean
     public Exchange giftCodeExchange() {
         return ExchangeBuilder.topicExchange(giftCodeExchange).durable(true).build();
     }
@@ -63,15 +58,6 @@ public class RabbitMqConfig extends ApplicationPropertyConfig {
     @Bean
     public Queue balanceUpdateQueue() {
         return QueueBuilder.durable(balanceUpdateQueue).build();
-    }
-
-    @Bean
-    public Binding walletCreationBinding(Queue walletCreationQueue, Exchange userExchange) {
-        return BindingBuilder
-                .bind(walletCreationQueue)
-                .to(userExchange)
-                .with(userCreatedRoutingKey)
-                .noargs();
     }
 
     @Bean

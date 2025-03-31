@@ -6,7 +6,6 @@ import com.wlt.transaction.entity.TransactionHistory;
 import com.wlt.transaction.repository.TransactionHistoryRepository;
 import com.wlt.transaction.service.TransactionExportService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -14,8 +13,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,7 +22,7 @@ public class TransactionExportServiceImpl implements TransactionExportService {
     private final TransactionHistoryRepository transactionHistoryRepository;
 
     @Override
-    public void exportCSV(TransactionExportRequestDto request, OutputStream outputStream) {
+    public void exportCSV(Long userId, TransactionExportRequestDto request, OutputStream outputStream) {
         try {
             // 1. Create CSV Writer with proper encoding
             Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
@@ -37,26 +34,41 @@ public class TransactionExportServiceImpl implements TransactionExportService {
 
             // 2. Write CSV Header
             String[] header = {
-                    "Transaction ID",
-                    "Date",
+                    "Transaction Id",
                     "Amount",
-                    "Currency",
-                    "Type",
-                    "Status",
-                    "Description"
+                    "Credit Amount",
+                    "Credit Currency",
+                    "Debit Amount",
+                    "Credit Wallet Id",
+                    "Debit Wallet Id",
+                    "Debit Currency",
+                    "SaveTimestamp",
+                    "Transaction Reference NO",
+                    "Transaction Type",
+                    "Transaction Ccy",
+                    "User Id",
+                    "Status"
             };
             csvWriter.writeNext(header);
 
             // 3. Stream data from database
-            List<TransactionHistory> transactionHistories = transactionHistoryRepository.findAll();
+            List<TransactionHistory> transactionHistories = transactionHistoryRepository.findByUserIdAndSaveTimestampAfterAndSaveTimestampBefore(userId,
+                    request.getStartDate().atStartOfDay(), request.getEndDate().plusDays(1).atStartOfDay());
             transactionHistories.forEach(transactionHistory -> {
                 String[] row = new String[header.length];
                 row[0] = String.valueOf(transactionHistory.getId());
-                row[1] = transactionHistory.getSaveTimestamp().toString();
-                row[2] = transactionHistory.getAmount().toString();
-                row[3] = transactionHistory.getTxnCcy();
-                row[4] = transactionHistory.getTransactionType();
-                row[5] = transactionHistory.getStatus();
+                row[1] = transactionHistory.getAmount().toString();
+                row[2] = transactionHistory.getCrAmount().toString();
+                row[3] = transactionHistory.getCrCcy();
+                row[4] = transactionHistory.getDrAmount() != null ? transactionHistory.getDrAmount().toString() : "";
+                row[5] = transactionHistory.getCrWalletId().toString();
+                row[6] = transactionHistory.getDrWalletId() != null ? transactionHistory.getDrWalletId().toString() : "";
+                row[7] = transactionHistory.getDrCcy();
+                row[8] = transactionHistory.getSaveTimestamp().toString();
+                row[9] = transactionHistory.getTransactionRefNo();
+                row[10] = transactionHistory.getTransactionType();
+                row[11] = transactionHistory.getUserId().toString();
+                row[12] = transactionHistory.getStatus();
                 csvWriter.writeNext(row);
             });
 

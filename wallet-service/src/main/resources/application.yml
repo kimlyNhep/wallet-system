@@ -1,6 +1,5 @@
 rabbitmq:
   exchange:
-    user: user.exchange
     gift-code: gift-code.exchange
     fund-transfer: fund-transfer.exchange
     wallet: wallet.exchange
@@ -19,7 +18,6 @@ rabbitmq:
     transaction:
       history: transaction.history.queue
   routing-key:
-    user-created: user.created
     gift-code:
       redeem: gift-code.redeem.routing-key
     fund-transfer: fund-transfer.routing-key
@@ -37,12 +35,10 @@ spring:
   application:
     name: wallet-service
   datasource:
-    url: jdbc:postgresql://localhost:9000/wlt_dev_db
-    username: admin
-    password: password
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
   jpa:
-#    hibernate:
-#      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -50,18 +46,11 @@ spring:
     listener:
       simple:
         acknowledge-mode: auto
-    host: localhost
-    port: 5672
-    username: myuser
-    password: mypassword
-  data:
-    redis:
-      host: localhost
-      port: 6379
+    host: ${RABBIT_HOST}
+    port: ${RABBIT_PORT}
+    username: ${RABBIT_USERNAME}
+    password: ${RABBIT_PASSWORD}
 
 payment:
   service:
-    base-url: http://localhost:8083
-
-server:
-  port: 8082
+    base-url: ${PAYMENT_SERVICE_URL}

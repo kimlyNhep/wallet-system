@@ -14,6 +14,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - wlt_system_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d wlt_dev_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3.9-management
@@ -25,20 +30,111 @@ services:
       RABBITMQ_DEFAULT_PASS: mypassword
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - wlt_system_network
 
-  redis:
-    image: redis:latest
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
     ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
+      - "1111:8080"
+    environment:
+      - USER_SERVICE_URL=http://user-service:8080
+      - WALLET_SERVICE_URL=http://wallet-service:8080
+      - PAYMENT_SERVICE_URL=http://payment-service:8080
+      - TRANSACTION_SERVICE_URL=http://transaction-service:8080
+    depends_on:
+      - postgres
+      - rabbitmq
+      - user-service
+      - payment-service
+      - wallet-service
+      - transaction-service
+    networks:
+      - app-network
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/wlt_dev_db
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=password
+      - SERVER_PORT=8080
+    networks:
+      - app-network
+      - wlt_system_network
+
+  payment-service:
+    build: ./payment
+    container_name: payment-service
+    depends_on:
+      - postgres
+      - rabbitmq
+      # - wallet-service
+    environment:
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USERNAME=myuser
+      - RABBIT_PASSWORD=mypassword
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/wlt_dev_db
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=password
+      - SERVER_PORT=8080
+      - WALLET_SERVICE_URL=http://wallet-service:8080
+    networks:
+      - app-network
+      - wlt_system_network
+
+  wallet-service:
+    build: ./wallet-service
+    container_name: wallet-service
+    depends_on:
+      - postgres
+      - rabbitmq
+      - payment-service
+    environment:
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USERNAME=myuser
+      - RABBIT_PASSWORD=mypassword
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/wlt_dev_db
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=password
+      - SERVER_PORT=8080
+      - PAYMENT_SERVICE_URL=http://payment-service:8080
+    networks:
+      - app-network
+      - wlt_system_network
+
+  transaction-service:
+    build: ./transaction
+    container_name: transaction-service
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USERNAME=myuser
+      - RABBIT_PASSWORD=mypassword
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/wlt_dev_db
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=password
+      - SERVER_PORT=8080
+    networks:
+      - app-network
+      - wlt_system_network
 
 volumes:
   postgres_data:
   rabbitmq_data:
-  redis_data:
 
 networks:
   wlt_system_network:
+    driver: bridge
+  app-network:
     driver: bridge

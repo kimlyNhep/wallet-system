@@ -1,15 +1,23 @@
 package com.wlt.user.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.CodeSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -21,40 +29,53 @@ import java.util.Map;
 @Aspect
 @Component
 public class LoggingAop {
-    private static final Logger logger = LoggerFactory.getLogger(LoggingAop.class);
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Around("execution(* com.wlt.user..*(..))")
+    public Object logAnyMethod(ProceedingJoinPoint joinPoint) throws Throwable {
+        String[] parameterNames = ((CodeSignature) joinPoint.getSignature()).getParameterNames();
+        Map<String, Object> requestData = new HashMap<>();
 
-    @Pointcut("within(@org.springframework.web.bind.annotation.RestController *)")
-    public void restControllerMethods() {
+        /// Loop through each params and extract its name and value
+        for (int i = 0; i < parameterNames.length; i++) {
+            String paramName = parameterNames[i];
+            if (paramName.equals("codeSignature") ||
+                    paramName.equals("context") ||
+                    paramName.equals("typeReference")
+                    || joinPoint.getArgs()[i] instanceof BindingResult) {
+                continue;
+            }
+            requestData.put(paramName, joinPoint.getArgs()[i]);
+        }
 
+        logAsJson(joinPoint, requestData, "Enter");
+
+        Object responseData = joinPoint.proceed();
+
+        logAsJson(joinPoint, responseData, "Exit");
+
+        return responseData;
     }
 
-    @Before("restControllerMethods()")
-    public void logBeforeServiceMethod(JoinPoint joinPoint) {
+    private void logAsJson(ProceedingJoinPoint joinPoint, Object data, String action) {
+        String method = joinPoint.getSignature().toShortString();
         try {
-            Map<String, Object> logData = new HashMap<>();
-            logData.put("action", "enter");
-
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest request = attributes.getRequest();
-                Map<String, String[]> requestParamsMap = request.getParameterMap();
-                Map<String, Object> multiValueParams = new HashMap<>();
-                for (Map.Entry<String, String[]> entry : requestParamsMap.entrySet()) {
-                    multiValueParams.put(entry.getKey(), Arrays.asList(entry.getValue()));
-                }
-                logData.put("requestParams", multiValueParams);
-                logData.put("method", request.getMethod());
-                logData.put("uri", request.getRequestURI());
-            } else {
-                logData.put("request", "No HttpServletRequest available");
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.registerModule(new Jdk8Module());
+            ObjectNode userNode = objectMapper.createObjectNode();
+            userNode.put("action", action);
+            userNode.put("method", method);
+            userNode.put("data", new ObjectMapper().writeValueAsString(data));
+            // Check if data is a Spring CGLIB proxy
+            if (data != null && Enhancer.isEnhanced(data.getClass())) {
+                log.warn("CGLIB Proxy detected - skipping serialization");
             }
-
-            String jsonLog = objectMapper.writeValueAsString(logData);
-            logger.info(jsonLog);
-
-        } catch (Exception e) {
-            logger.error("Error during JSON logging for method entry: {}", joinPoint.getSignature().toShortString(), e);
+            else {
+                String json = objectMapper.writeValueAsString(userNode);
+                log.info(json);
+            }
+        }
+        catch (Exception e) {
+            log.warn(e.getMessage());
         }
     }
 }

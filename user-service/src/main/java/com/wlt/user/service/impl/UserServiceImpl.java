@@ -2,10 +2,7 @@ package com.wlt.user.service.impl;
 
 import com.wlt.user.constants.MessageEnum;
 import com.wlt.user.constants.RoleName;
-import com.wlt.user.dto.GrantRoleResponseDto;
-import com.wlt.user.dto.UserCreatedEvent;
-import com.wlt.user.dto.UserRegisterRequestDto;
-import com.wlt.user.dto.UserRegisterResponseDto;
+import com.wlt.user.dto.*;
 import com.wlt.user.entity.Role;
 import com.wlt.user.entity.User;
 import com.wlt.user.exception.CustomException;
@@ -28,7 +25,6 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RoleRepository roleRepository;
     private final RoleCacheService roleCacheService;
 
     @Override
@@ -53,6 +49,7 @@ public class UserServiceImpl implements UserService {
         User userCreated = userRepository.save(userEntity);
         UserRegisterResponseDto response = new UserRegisterResponseDto();
         response.setUsername(userRegisterRequestDto.getEmail());
+        response.setUserId(userCreated.getId());
 
         UserCreatedEvent userCreatedEvent = new UserCreatedEvent();
         userCreatedEvent.setUserId(userCreated.getId());
@@ -61,8 +58,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public GrantRoleResponseDto grantRole(Long adminUserId, Long userId, String roleName) {
-        Optional<Role> superAdminRole = roleRepository.findByName(RoleName.SUPER_ADMIN.name());
+    public GrantRoleResponseDto grantRole(Long adminUserId, GrantRoleRequestDto grantRoleRequestDto) {
+        Optional<Role> superAdminRole = roleCacheService.getRoles(RoleName.SUPER_ADMIN.name());
         if (superAdminRole.isEmpty()) {
             throw new RuntimeException("Super admin role not found");
         }
@@ -72,26 +69,27 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Admin user not found");
         }
 
-        Optional<User> userOptional = userRepository.findByIdAndRoles(userId, Set.of());
+        Optional<Role> userRole = roleCacheService.getRoles(RoleName.USER.name());
+
+        if (userRole.isEmpty()) {
+            throw new RuntimeException("User role not found");
+        }
+
+        Optional<User> userOptional = userRepository.findByIdAndRoles(grantRoleRequestDto.getUserId(), Set.of(userRole.get()));
         if (userOptional.isEmpty()) {
             throw new RuntimeException("User not found");
         }
 
-        Optional<Role> userRole = roleRepository.findByName(RoleName.USER.name());
-        if (userRole.isEmpty()) {
-            throw new RuntimeException("Super admin role not found");
-        }
-
-        Optional<Role> newRole = roleRepository.findByName(roleName);
+        Optional<Role> newRole = roleCacheService.getRoles(grantRoleRequestDto.getRoleName());
         if (newRole.isEmpty()) {
             throw new RuntimeException("Role not found");
         }
 
         User user = userOptional.get();
-        user.setRoles(Set.of(newRole.get()));
-        userRepository.save(user);
+        user.getRoles().add(newRole.get());
+        userRepository.saveAndFlush(user);
         GrantRoleResponseDto response = new GrantRoleResponseDto();
-        response.setRoleName(roleName);
+        response.setRoleName(grantRoleRequestDto.getRoleName());
         response.setEmail(user.getEmail());
         return response;
     }

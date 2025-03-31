@@ -3,39 +3,33 @@ package com.wlt.wallet.service.impl;
 import com.wlt.wallet.constants.CommonConstants;
 import com.wlt.wallet.dto.*;
 import com.wlt.wallet.entity.WalletAccount;
+import com.wlt.wallet.provider.ServiceProvider;
 import com.wlt.wallet.repository.WalletAccountRepository;
 import com.wlt.wallet.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
-
-    @Value("${payment.service.base-url}")
-    private String paymentServiceBaseUrl;
-
     private final WalletAccountRepository walletAccountRepository;
-    private final RestTemplate restTemplate;
+    private final ServiceProvider serviceProvider;
 
     @Override
-    @Cacheable(key = "#userId.toString() + ':' + #id.toString()", value = "getWalletData")
     public GetWalletResponseDto getWallet(Long userId, Long id) {
         Optional<WalletAccount> walletAccount = walletAccountRepository.findByIdAndStatus(id, CommonConstants.ACTIVE);
+
+        if (walletAccount.isPresent()) {
+            Long userWalletId = walletAccount.get().getUserId();
+            if (!userId.equals(userWalletId)) {
+                throw new RuntimeException("user cannot get other people wallet");
+            }
+        }
         GetWalletResponseDto getWalletResponseDto = new GetWalletResponseDto();
         walletAccount.ifPresent(account -> BeanUtils.copyProperties(account, getWalletResponseDto));
         return getWalletResponseDto;
@@ -52,6 +46,7 @@ public class AccountServiceImpl implements AccountService {
         WalletAccount newWalletAccount = walletAccountRepository.save(walletAccount);
         WalletAccountResponseDto walletAccountResponseDto = new WalletAccountResponseDto();
         BeanUtils.copyProperties(newWalletAccount, walletAccountResponseDto);
+        walletAccountResponseDto.setWalletId(newWalletAccount.getId());
         return walletAccountResponseDto;
     }
 
@@ -64,31 +59,17 @@ public class AccountServiceImpl implements AccountService {
             BigDecimal creditBalance = BigDecimal.ZERO;
             BigDecimal exchangeRate = BigDecimal.ZERO;
             if (!walletCcy.equals(creditAccountBalanceRequestDto.getCcy())) {
-                MultiValueMap<String, String> headers = new HttpHeaders();
-                headers.add("Content-Type", "application/json");
-                headers.add("Collation-id", UUID.randomUUID().toString());
-
                 GetExchangeRateRequestDto getExchangeRateRequestDto = new GetExchangeRateRequestDto();
                 getExchangeRateRequestDto.setCrCcy(walletCcy);
                 getExchangeRateRequestDto.setDrCcy(creditAccountBalanceRequestDto.getCcy());
 
-                ResponseEntity<SuccessResponse<GetExchangeRateResponseDto>> exchangeRateEntity = restTemplate.exchange(
-                        paymentServiceBaseUrl + "/api/v1/exchange-rate",
-                        HttpMethod.POST,
-                        new HttpEntity<>(getExchangeRateRequestDto, headers),
-                        new ParameterizedTypeReference<>() {
-                        });
-
-                if (exchangeRateEntity.getStatusCode().is2xxSuccessful()) {
-                    SuccessResponse<GetExchangeRateResponseDto> rate = exchangeRateEntity.getBody();
-                    if (rate != null && rate.getData() != null) {
-                        GetExchangeRateResponseDto exchangeRateResponseDto = rate.getData();
-                        exchangeRate = exchangeRateResponseDto.getRate();
-                        creditBalance = creditAccountBalanceRequestDto.getCreditBalance().multiply(exchangeRate);
-                        BigDecimal newBalance = creditWalletAccount.getBalance().add(creditBalance);
-                        creditWalletAccount.setBalance(newBalance);
-                        walletAccountRepository.save(creditWalletAccount);
-                    }
+                GetExchangeRateResponseDto exchangeRateResponseDto = serviceProvider.getExchangeRate(getExchangeRateRequestDto);
+                if (exchangeRateResponseDto != null) {
+                    exchangeRate = exchangeRateResponseDto.getRate();
+                    creditBalance = creditAccountBalanceRequestDto.getCreditBalance().multiply(exchangeRate);
+                    BigDecimal newBalance = creditWalletAccount.getBalance().add(creditBalance);
+                    creditWalletAccount.setBalance(newBalance);
+                    walletAccountRepository.save(creditWalletAccount);
                 }
             } else {
                 creditBalance = creditAccountBalanceRequestDto.getCreditBalance();
@@ -119,40 +100,28 @@ public class AccountServiceImpl implements AccountService {
             BigDecimal debitBalance = BigDecimal.ZERO;
             BigDecimal exchangeRate = BigDecimal.ZERO;
             if (!walletCcy.equals(debitAccountBalanceRequestDto.getCcy())) {
-                MultiValueMap<String, String> headers = new HttpHeaders();
-                headers.add("Content-Type", "application/json");
-                headers.add("Collation-id", UUID.randomUUID().toString());
-
                 GetExchangeRateRequestDto getExchangeRateRequestDto = new GetExchangeRateRequestDto();
                 getExchangeRateRequestDto.setCrCcy(walletCcy);
                 getExchangeRateRequestDto.setDrCcy(debitAccountBalanceRequestDto.getCcy());
 
-                ResponseEntity<SuccessResponse<GetExchangeRateResponseDto>> exchangeRateEntity = restTemplate.exchange(
-                        paymentServiceBaseUrl + "/api/v1/exchange-rate",
-                        HttpMethod.POST,
-                        new HttpEntity<>(getExchangeRateRequestDto, headers),
-                        new ParameterizedTypeReference<>() {
-                        });
+                GetExchangeRateResponseDto exchangeRateResponseDto = serviceProvider.getExchangeRate(getExchangeRateRequestDto);
 
-                if (exchangeRateEntity.getStatusCode().is2xxSuccessful()) {
-                    SuccessResponse<GetExchangeRateResponseDto> rate = exchangeRateEntity.getBody();
-                    if (rate != null && rate.getData() != null) {
-                        GetExchangeRateResponseDto exchangeRateResponseDto = rate.getData();
-                        exchangeRate = exchangeRateResponseDto.getRate();
-                        BigDecimal balance = debitAccountBalanceRequestDto.getDebitBalance().multiply(exchangeRate);
-                        if (debitWalletAccount.getBalance().compareTo(balance) > 0) {
-                            debitBalance = debitWalletAccount.getBalance().subtract(balance);
-                            debitWalletAccount.setBalance(debitBalance);
-                            walletAccountRepository.save(debitWalletAccount);
-                        } else {
-                            throw new RuntimeException("insufficient balance");
-                        }
+                if (exchangeRateResponseDto != null) {
+                    exchangeRate = exchangeRateResponseDto.getRate();
+                    BigDecimal balance = debitAccountBalanceRequestDto.getDebitBalance().multiply(exchangeRate);
+                    if (debitWalletAccount.getBalance().compareTo(balance) > 0) {
+                        debitBalance = balance;
+                        BigDecimal newBalance = debitWalletAccount.getBalance().subtract(balance);
+                        debitWalletAccount.setBalance(newBalance);
+                        walletAccountRepository.save(debitWalletAccount);
+                    } else {
+                        throw new RuntimeException("insufficient balance");
                     }
                 }
             } else {
-                BigDecimal balance = debitAccountBalanceRequestDto.getDebitBalance();
-                debitBalance = debitWalletAccount.getBalance().subtract(balance);
-                debitWalletAccount.setBalance(debitBalance);
+                debitBalance = debitAccountBalanceRequestDto.getDebitBalance();
+                BigDecimal newBalance = debitWalletAccount.getBalance().subtract(debitBalance);
+                debitWalletAccount.setBalance(newBalance);
                 walletAccountRepository.save(debitWalletAccount);
             }
 

@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Setter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class WalletAccountResponseDto {
-    private Long id;
+    private Long walletId;
     private Long userId;
     private String ccy;
     private BigDecimal balance;

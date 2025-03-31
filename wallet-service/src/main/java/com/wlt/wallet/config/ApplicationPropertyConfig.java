@@ -3,9 +3,6 @@ package com.wlt.wallet.config;
 import org.springframework.beans.factory.annotation.Value;
 
 public class ApplicationPropertyConfig {
-    @Value("${rabbitmq.exchange.user}")
-    protected String userExchange;
-
     @Value("${rabbitmq.exchange.gift-code}")
     protected String giftCodeExchange;
 
@@ -14,9 +11,6 @@ public class ApplicationPropertyConfig {
 
     @Value("${rabbitmq.queue.gift-code.redeem}")
     protected String redeemGiftCodeQueue;
-
-    @Value("${rabbitmq.routing-key.user-created}")
-    protected String userCreatedRoutingKey;
 
     @Value("${rabbitmq.routing-key.gift-code.redeem}")
     protected String redeemGiftCodeRoutingKey;
@@ -55,9 +49,8 @@ public class ApplicationPropertyConfig {
     @Value("${rabbitmq.exchange.transaction.history}")
     protected String transactionHistoryExchange;
 
-    @Value("${rabbitmq.queue.transaction.history}")
-    protected String transactionHistoryQueue;
-
     @Value("${rabbitmq.routing-key.transaction.history}")
     protected String transactionHistoryRoutingKey;
+    @Value("${payment.service.base-url}")
+    protected String paymentServiceBaseUrl;
 }
