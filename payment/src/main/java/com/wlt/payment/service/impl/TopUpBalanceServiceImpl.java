@@ -1,8 +1,10 @@
 package com.wlt.payment.service.impl;
 
 import com.wlt.payment.config.ApplicationPropertyConfig;
+import com.wlt.payment.constants.MessageError;
 import com.wlt.payment.dto.*;
 import com.wlt.payment.entity.GiftCode;
+import com.wlt.payment.exception.CustomException;
 import com.wlt.payment.provider.ServiceProvider;
 import com.wlt.payment.repository.GiftCodeRepository;
 import com.wlt.payment.service.PaymentService;
@@ -44,6 +46,11 @@ public class TopUpBalanceServiceImpl extends ApplicationPropertyConfig implement
 
         if (giftCodeOptional.isPresent()) {
             GiftCode giftCode = giftCodeOptional.get();
+
+            if (giftCode.getExpiryDateTime().isBefore(LocalDateTime.now())) {
+                throw new CustomException(MessageError.GIFT_CODE_ALREADY_EXPIRED);
+            }
+
             if (giftCode.getIsRedeemed().equals("N") && (giftCode.getExpiryDateTime() == null || giftCode.getExpiryDateTime().isAfter(LocalDateTime.now()))) {
                 GiftCodeValidationResponseDto responseDto = new GiftCodeValidationResponseDto();
                 responseDto.setGiftCode(code);

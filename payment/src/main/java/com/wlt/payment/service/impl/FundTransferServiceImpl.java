@@ -12,9 +12,7 @@ import com.wlt.payment.service.FundTransferService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -29,8 +27,6 @@ public class FundTransferServiceImpl extends ApplicationPropertyConfig implement
 
     private final TransactionRepository transactionRepository;
     private final ServiceProvider serviceProvider;
-
-    private final RestTemplate restTemplate;
     private final RabbitTemplate rabbitTemplate;
 
     @Override
@@ -57,7 +53,7 @@ public class FundTransferServiceImpl extends ApplicationPropertyConfig implement
             fundTransferEvent.setUserId(userId);
             rabbitTemplate.convertAndSend(fundTransferExchange, fundTransferRoutingKey, fundTransferEvent);
         } else {
-            throw new RuntimeException("Transaction acknowledgement failed");
+            throw new CustomException(MessageError.ERR_009_MAKE_ACKNOWLEDGEMENT_FAILED);
         }
 
         FundTransferResponseDto responseDto = new FundTransferResponseDto();
@@ -67,7 +63,7 @@ public class FundTransferServiceImpl extends ApplicationPropertyConfig implement
     }
 
     @Override
-    public ConfirmFundTransferResponseDto fundTransfer(Long userId, FundTransferRequestDto fundTransferRequestDto) {
+    public void fundTransfer(Long userId, FundTransferRequestDto fundTransferRequestDto) {
         DebitAccountBalanceRequestDto detailsRequestDto = new DebitAccountBalanceRequestDto();
         detailsRequestDto.setCcy(fundTransferRequestDto.getCcy());
         detailsRequestDto.setDebitBalance(fundTransferRequestDto.getAmount());
@@ -114,14 +110,13 @@ public class FundTransferServiceImpl extends ApplicationPropertyConfig implement
                         ConfirmFundTransferResponseDto responseDto = new ConfirmFundTransferResponseDto();
                         responseDto.setPaymentRefNo(fundTransferRequestDto.getPaymentRefNo());
                         responseDto.setTransactionRefNo(tranRefNo);
-                        return responseDto;
+                        return;
                     }
                 }
             }
-        } else {
-
         }
-        throw new RuntimeException("something went wrong");
+
+        throw new CustomException(MessageError.SOMETHING_WENT_WRONG);
     }
 
     @Override
@@ -137,8 +132,22 @@ public class FundTransferServiceImpl extends ApplicationPropertyConfig implement
             responseDto.setPaymentRefNo(transaction.getPaymentRefNo());
             return responseDto;
         } else {
-            throw new RuntimeException("Transaction not found");
+            throw new CustomException(MessageError.ERR_007_TRANSACTION_NOT_FOUND);
         }
+    }
+
+    @Override
+    public TransactionStatusResponseDto transactionStatus(TransferAcknowledgementRequestDto transferAcknowledgementRequestDto) {
+        Optional<Transaction> transaction = transactionRepository.findByPaymentRefNo(transferAcknowledgementRequestDto.getPaymentRefNo());
+        if (transaction.isPresent()) {
+            TransactionStatusResponseDto responseDto = new TransactionStatusResponseDto();
+            responseDto.setStatus(transaction.get().getStatus());
+            responseDto.setPaymentRefNo(transaction.get().getPaymentRefNo());
+            responseDto.setTransactionRefNo(transaction.get().getTransactionRefNo());
+            return responseDto;
+        }
+
+        throw new CustomException(MessageError.ERR_007_TRANSACTION_NOT_FOUND);
     }
 
     private Transaction getInitTransaction(String paymentRefNo, FundTransferRequestDto fundTransferRequestDto) {

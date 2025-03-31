@@ -3,8 +3,10 @@ package com.wlt.user.filter;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wlt.user.constants.MessageError;
 import com.wlt.user.entity.Session;
 import com.wlt.user.entity.User;
+import com.wlt.user.exception.CustomException;
 import com.wlt.user.repository.SessionRepository;
 import com.wlt.user.repository.UserRepository;
 import com.wlt.user.service.impl.CustomUserDetail;
@@ -59,7 +61,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         Optional<User> userInfo = userRepository.findByEmail(user.getUsername());
         if (userInfo.isEmpty()) {
-            throw new RuntimeException("user not found");
+            throw new CustomException(MessageError.USER_NOT_FOUND);
         }
 
         String ipAddress = getClientIpAddress(request);

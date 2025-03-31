@@ -1,6 +1,6 @@
-package com.wlt.wallet.exception;
+package com.wlt.user.exception;
 
-import com.wlt.wallet.dto.SuccessResponse;
+import com.wlt.user.dto.SuccessResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,7 +17,6 @@ public class GlobalException {
         successResponse.setCode(ex.getErrorCode());
         successResponse.setMessage(ex.getErrorMessage());
         successResponse.setCorrelationId(UUID.randomUUID().toString());
-
 
         HttpStatus status = HttpStatus.BAD_REQUEST;
 

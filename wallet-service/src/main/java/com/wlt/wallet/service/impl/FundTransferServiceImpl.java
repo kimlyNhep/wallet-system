@@ -64,11 +64,13 @@ public class FundTransferServiceImpl implements FundTransferService {
 
         FundTransferResponseDto response = new FundTransferResponseDto();
         response.setPaymentRefNo(paymentRefNo);
+        response.setCrWalletId(fundTransferRequestDto.getCrWalletId());
+        response.setDrWalletId(fundTransferRequestDto.getDrWalletId());
+        response.setCrCcy(fundTransferRequestDto.getCrCcy());
+        response.setDrCcy(fundTransferRequestDto.getDrCcy());
+        response.setCcy(fundTransferRequestDto.getCcy());
+        response.setAmount(fundTransferRequestDto.getAmount());
+        response.setMessage("Your fund transfer has been initiated.");
         return response;
-    }
-
-    @Override
-    public UnblockAmountRequestDto blockAmount(Long userId, DebitAccountBalanceRequestDto debitAccountBalanceRequestDto) {
-        return null;
     }
 }

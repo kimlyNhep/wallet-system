@@ -1,8 +1,10 @@
 package com.wlt.user.service.impl;
 
+import com.wlt.user.constants.MessageError;
 import com.wlt.user.dto.LogoutResponseDto;
 import com.wlt.user.dto.SessionResponseDto;
 import com.wlt.user.entity.Session;
+import com.wlt.user.exception.CustomException;
 import com.wlt.user.repository.SessionRepository;
 import com.wlt.user.service.SessionService;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,7 @@ public class SessionServiceImpl implements SessionService {
             }
         }
 
-        throw new RuntimeException("session not found");
+        throw new CustomException(MessageError.SESSION_NOT_FOUND);
     }
 
     @Override
@@ -47,6 +49,6 @@ public class SessionServiceImpl implements SessionService {
             return logoutResponseDto;
         }
 
-        throw new RuntimeException("session not found");
+        throw new CustomException(MessageError.SESSION_NOT_FOUND);
     }
 }
