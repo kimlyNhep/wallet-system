@@ -12,7 +12,9 @@ public enum MessageError {
     ERR_002_WALLET_NOT_ENOUGH("ERR-002", "Wallet not enough"),
     ERR_003_INVALID_GIFT_CODE("ERR-003", "Invalid gift code"),
     ERR_004_CANNOT_QUERY_OTHER_WALLET("ERR-004", "Can not query other's wallet"),
-    ERR_005_ERROR_UNBLOCK_WALLET("ERR-005", "Error unblock wallet"),;
+    ERR_005_ERROR_UNBLOCK_WALLET("ERR-005", "Error unblock wallet"),
+    CANNOT_ACCESS_OTHER_WALLET("ERR-006", "Please verify your wallet ccy"),
+    INVALID_CCY_CODE("ERR-007", "Invalid ccy"),;
 
     private final String code;
     private final String message;

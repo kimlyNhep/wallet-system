@@ -35,6 +35,15 @@ public class FundTransferServiceImpl implements FundTransferService {
         Optional<WalletAccount> sourceWalletAccount = accountRepository.findByIdAndStatus(fundTransferRequestDto.getDrWalletId(), CommonConstants.ACTIVE);
         if (sourceWalletAccount.isPresent()) {
             BigDecimal sourceBalance = sourceWalletAccount.get().getBalance();
+
+            if (!userId.equals(sourceWalletAccount.get().getUserId())) {
+                throw new CustomException(MessageError.CANNOT_ACCESS_OTHER_WALLET);
+            }
+
+            if (!sourceWalletAccount.get().getCcy().equals(fundTransferRequestDto.getDrCcy())) {
+                throw new CustomException(MessageError.INVALID_CCY_CODE);
+            }
+
             if (sourceBalance.compareTo(fundTransferRequestDto.getAmount()) < 0) {
                 throw new CustomException(MessageError.ERR_001_INSUFFICIENT_AMOUNT);
             }
@@ -45,6 +54,11 @@ public class FundTransferServiceImpl implements FundTransferService {
         Optional<WalletAccount> targetWalletAccount = accountRepository.findByIdAndStatus(fundTransferRequestDto.getCrWalletId(), CommonConstants.ACTIVE);
         if (targetWalletAccount.isEmpty()) {
             throw new CustomException(MessageError.ERR_002_WALLET_NOT_ENOUGH);
+        }
+
+        WalletAccount targetWallet = targetWalletAccount.get();
+        if (!targetWallet.getCcy().equals(fundTransferRequestDto.getCrCcy())) {
+            throw new CustomException(MessageError.INVALID_CCY_CODE);
         }
 
         // process payment
